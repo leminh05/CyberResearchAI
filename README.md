@@ -259,6 +259,23 @@ extension). If it is empty, development and tests use an embedded
 PostgreSQL 16 + pgvector instance provided by the `pgserver` package and stored
 in `data/pgdata/` (git-ignored).
 
+## Claude on GitHub (`@claude`)
+
+`.github/workflows/claude.yml` lets the repository owner or collaborators
+mention `@claude` in an issue, PR comment or review; Claude replies and can
+push commits as `claude[bot]` (branches prefixed `claude/`).
+
+Setup, done once by the owner:
+
+1. Install the Claude GitHub App for this repository: https://github.com/apps/claude
+2. Add **one** repository secret (Settings > Secrets and variables > Actions):
+   `CLAUDE_CODE_OAUTH_TOKEN` (Claude Pro/Max, created with `claude setup-token`)
+   or `ANTHROPIC_API_KEY` (pay per use). Never commit these values.
+3. Merge the workflow into `main`: GitHub runs comment-triggered workflows
+   from the default branch only.
+
+Runs use GitHub Actions minutes of this private repository.
+
 ## Branch strategy
 
 - `main` - stable, presentation-ready releases
