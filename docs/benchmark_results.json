@@ -1,0 +1,59 @@
+{
+  "environment": {
+    "python": "3.11.0",
+    "os": "Windows 10",
+    "cpu_count": 12,
+    "spark_master": "local[*]",
+    "spark_driver_memory": "2g",
+    "repeats": 3,
+    "timing": "best of repeats, after one warm-up run"
+  },
+  "spark_startup_seconds": 4.2,
+  "base_records": 381,
+  "rows": [
+    {
+      "records": 1000,
+      "file_mb": 1.74,
+      "python_seconds": 0.083,
+      "python_peak_mb": 4.0,
+      "spark_seconds": 0.866,
+      "spark_jvm_used_mb": 437.1,
+      "after_dedup": 878,
+      "duplicates_removed": 122,
+      "results_match": true
+    },
+    {
+      "records": 10000,
+      "file_mb": 17.65,
+      "python_seconds": 0.824,
+      "python_peak_mb": 39.7,
+      "spark_seconds": 1.095,
+      "spark_jvm_used_mb": 212.0,
+      "after_dedup": 8094,
+      "duplicates_removed": 1906,
+      "results_match": true
+    },
+    {
+      "records": 100000,
+      "file_mb": 177.0,
+      "python_seconds": 8.989,
+      "python_peak_mb": 397.1,
+      "spark_seconds": 4.168,
+      "spark_jvm_used_mb": 505.0,
+      "after_dedup": 80580,
+      "duplicates_removed": 19420,
+      "results_match": true
+    },
+    {
+      "records": 300000,
+      "file_mb": 531.71,
+      "python_seconds": 26.74,
+      "python_peak_mb": 1194.9,
+      "spark_seconds": 8.788,
+      "spark_jvm_used_mb": 848.6,
+      "after_dedup": 242098,
+      "duplicates_removed": 57902,
+      "results_match": true
+    }
+  ]
+}

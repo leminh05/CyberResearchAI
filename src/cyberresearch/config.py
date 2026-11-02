@@ -59,8 +59,40 @@ class IngestionSettings:
 
 
 @dataclass(frozen=True)
+class ProcessingSettings:
+    """PDF access policy, download limits and chunking parameters."""
+
+    pdf_directory: Path = PROJECT_ROOT / "data" / "pdfs"
+    max_pdf_megabytes: float = 30.0
+    allowed_licenses: tuple[str, ...] = ("cc0", "public-domain", "cc-by", "cc-by-sa", "cc-by-nc", "cc-by-nc-sa")
+    allow_unknown_license: bool = False
+    host_min_interval_seconds: float = 1.0
+    chunk_max_words: int = 220
+    chunk_overlap_words: int = 40
+    skip_sections: tuple[str, ...] = ("References", "Bibliography", "Acknowledgments", "Acknowledgements")
+
+
+@dataclass(frozen=True)
+class EmbeddingSettings:
+    """Sentence Transformers model used for chunk embeddings."""
+
+    model_name: str = "sentence-transformers/all-MiniLM-L6-v2"
+    dimension: int = 384
+    batch_size: int = 32
+
+
+@dataclass(frozen=True)
+class SparkSettings:
+    """Local Spark session configuration."""
+
+    master: str = "local[*]"
+    driver_memory: str = "2g"
+    shuffle_partitions: int = 8
+
+
+@dataclass(frozen=True)
 class Settings:
-    """All settings needed by the ingestion pipeline."""
+    """All application settings."""
 
     database_url: str | None
     contact_email: str | None
@@ -73,6 +105,20 @@ class Settings:
     ingestion: IngestionSettings
     sources: dict[str, SourceSettings] = field(default_factory=dict)
     topics: list[Topic] = field(default_factory=list)
+    processing: ProcessingSettings = field(default_factory=ProcessingSettings)
+    embedding: EmbeddingSettings = field(default_factory=EmbeddingSettings)
+    spark: SparkSettings = field(default_factory=SparkSettings)
+
+
+def _processing_settings(raw: dict[str, Any]) -> ProcessingSettings:
+    """Build ProcessingSettings, resolving the PDF directory and list values."""
+    values = dict(raw)
+    pdf_dir = Path(values.pop("pdf_directory", "data/pdfs"))
+    values["pdf_directory"] = pdf_dir if pdf_dir.is_absolute() else PROJECT_ROOT / pdf_dir
+    for key in ("allowed_licenses", "skip_sections"):
+        if key in values:
+            values[key] = tuple(values[key])
+    return ProcessingSettings(**values)
 
 
 def _env(name: str) -> str | None:
@@ -134,4 +180,7 @@ def load_settings(settings_path: Path | None = None, env_file: Path | None = Non
         ingestion=IngestionSettings(**(raw.get("ingestion") or {})),
         sources=sources,
         topics=topics,
+        processing=_processing_settings(raw.get("processing") or {}),
+        embedding=EmbeddingSettings(**(raw.get("embedding") or {})),
+        spark=SparkSettings(**(raw.get("spark") or {})),
     )

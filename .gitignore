@@ -21,6 +21,7 @@ data/raw/
 data/processed/
 data/pdfs/
 data/pgdata/
+data/benchmark/
 *.pdf
 
 # Logs
