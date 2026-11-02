@@ -82,6 +82,29 @@ class EmbeddingSettings:
 
 
 @dataclass(frozen=True)
+class RagSettings:
+    """Retrieval and answer-generation settings (Phase 3)."""
+
+    provider: str = "claude"  # claude | ollama
+    ollama_base_url: str = "http://127.0.0.1:11434"
+    ollama_model: str = "qwen2.5:7b"
+    ollama_num_ctx: int = 12288
+    ollama_num_predict: int = 4096
+    ollama_timeout_seconds: float = 900.0
+    model: str = "claude-opus-5-5"
+    effort: str = "medium"
+    max_tokens: int = 16000
+    top_k: int = 8
+    candidate_k: int = 40
+    max_chunks_per_paper: int = 3
+    min_similarity: float = 0.30
+    weak_similarity: float = 0.45
+    exclude_sections: tuple[str, ...] = ("Front Matter",)
+    history_turns: int = 3
+    min_quote_words: int = 5
+
+
+@dataclass(frozen=True)
 class SparkSettings:
     """Local Spark session configuration."""
 
@@ -108,6 +131,20 @@ class Settings:
     processing: ProcessingSettings = field(default_factory=ProcessingSettings)
     embedding: EmbeddingSettings = field(default_factory=EmbeddingSettings)
     spark: SparkSettings = field(default_factory=SparkSettings)
+    rag: RagSettings = field(default_factory=RagSettings)
+    # Only whether a key exists; the SDK reads the key itself from the environment.
+    anthropic_api_key_present: bool = False
+
+
+def _rag_settings(raw: dict[str, Any]) -> RagSettings:
+    values = dict(raw)
+    for key, value in (values.pop("ollama", None) or {}).items():
+        values[f"ollama_{key}"] = value
+    if values.get("provider", "claude") not in ("claude", "ollama"):
+        raise ValueError("rag.provider must be 'claude' or 'ollama'")
+    if "exclude_sections" in values:
+        values["exclude_sections"] = tuple(values["exclude_sections"])
+    return RagSettings(**values)
 
 
 def _processing_settings(raw: dict[str, Any]) -> ProcessingSettings:
@@ -183,4 +220,6 @@ def load_settings(settings_path: Path | None = None, env_file: Path | None = Non
         processing=_processing_settings(raw.get("processing") or {}),
         embedding=EmbeddingSettings(**(raw.get("embedding") or {})),
         spark=SparkSettings(**(raw.get("spark") or {})),
+        rag=_rag_settings(raw.get("rag") or {}),
+        anthropic_api_key_present=bool(_env("ANTHROPIC_API_KEY") or _env("ANTHROPIC_AUTH_TOKEN")),
     )
