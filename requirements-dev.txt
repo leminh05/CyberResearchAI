@@ -1,0 +1,8 @@
+-r requirements.txt
+
+# Testing
+pytest>=8.0
+
+# Embedded PostgreSQL 16 + pgvector for local development and tests
+# (used only when DATABASE_URL is not set; see README).
+pgserver>=0.1.4
