@@ -110,6 +110,12 @@ def test_metadata_filters(retriever, corpus) -> None:
 
 
 @pytest.mark.db
+def test_retrieval_widens_hnsw_search(store, retriever) -> None:
+    retriever.retrieve("network intrusion detection")
+    assert store.conn.execute("SHOW hnsw.ef_search").fetchone()["hnsw.ef_search"] == str(SETTINGS.hnsw_ef_search)
+
+
+@pytest.mark.db
 def test_embedding_model_mismatch_is_detected(store, corpus) -> None:
     other = HashEmbedder()
     other.model_name = "sentence-transformers/other-model"

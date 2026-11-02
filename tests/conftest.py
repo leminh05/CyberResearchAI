@@ -48,7 +48,9 @@ def store(database_url: str):
     schema = f"test_{uuid.uuid4().hex[:12]}"
     store = PostgresStore.connect(database_url)
     store.conn.execute(f"CREATE SCHEMA {schema}")
-    store.conn.execute(f"SET search_path TO {schema}")
+    # public stays on the path: in Docker the vector extension (type "vector")
+    # is installed in public by docker/postgres/init.
+    store.conn.execute(f"SET search_path TO {schema}, public")
     store.init_schema()
     yield store
     store.conn.execute(f"DROP SCHEMA {schema} CASCADE")

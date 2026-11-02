@@ -103,6 +103,10 @@ rag:
   # max_chunks_per_paper per paper (diversity), then the best top_k.
   top_k: 8
   candidate_k: 40
+  # HNSW search breadth. The default (40) let SQL filters drop the best chunk
+  # (measured: 0.379 vs exact 0.414 for one question); 200 matches exact search
+  # on this corpus at negligible cost.
+  hnsw_ef_search: 200
   max_chunks_per_paper: 3
   # Cosine-similarity gates (calibrated on the test questions, see README):
   # below min_similarity nothing is sent to Claude ("insufficient evidence");

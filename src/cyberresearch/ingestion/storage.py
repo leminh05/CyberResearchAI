@@ -48,7 +48,10 @@ class PostgresStore:
 
     @classmethod
     def connect(cls, database_url: str) -> "PostgresStore":
-        return cls(psycopg.connect(database_url, autocommit=True, row_factory=dict_row))
+        # connect_timeout: fail with a clear error instead of hanging forever
+        # (on Windows "localhost" resolves to ::1 first, which Docker's
+        # 127.0.0.1-only port does not answer).
+        return cls(psycopg.connect(database_url, autocommit=True, row_factory=dict_row, connect_timeout=15))
 
     def close(self) -> None:
         self.conn.close()
