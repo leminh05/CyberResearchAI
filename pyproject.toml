@@ -1,0 +1,14 @@
+[project]
+name = "cyberresearch"
+version = "0.1.0"
+description = "CyberResearchAI - Intelligent Cybersecurity Research Assistant with Verified Citations"
+requires-python = ">=3.11,<3.12"
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+addopts = "-ra -m 'not live'"
+markers = [
+    "live: calls real external APIs (run with: pytest -m live)",
+    "db: requires a PostgreSQL database",
+]

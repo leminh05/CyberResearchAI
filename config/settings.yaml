@@ -1,0 +1,63 @@
+# CyberResearchAI configuration (non-secret values only; secrets live in .env)
+
+ingestion:
+  # Maximum records fetched per (source, topic) in one run. When the limit is
+  # reached, the checkpoint keeps the cursor so the next run resumes there.
+  max_records_per_topic: 200
+  # Daily mode: first run looks back this many days; later runs start from
+  # the last completed window minus an overlap (catches late-indexed papers).
+  daily_initial_lookback_days: 3
+  daily_overlap_days: 1
+  # Backfill mode splits the historical range into windows of this many months.
+  backfill_window_months: 12
+
+http:
+  timeout_seconds: 30
+  max_retries: 5
+  backoff_base_seconds: 2.0
+  backoff_max_seconds: 60.0
+
+sources:
+  arxiv:
+    enabled: true
+    base_url: "https://export.arxiv.org/api/query"
+    # arXiv API terms: no more than one request every three seconds.
+    min_interval_seconds: 3.0
+    page_size: 100
+  openalex:
+    enabled: true
+    base_url: "https://api.openalex.org/works"
+    # OpenAlex allows up to 10 requests/second; we stay well below it.
+    min_interval_seconds: 0.2
+    page_size: 100
+  semantic_scholar:
+    enabled: true
+    base_url: "https://api.semanticscholar.org/graph/v1/paper/search/bulk"
+    # With an API key the limit is 1 request/second; the public pool is
+    # shared and often throttled, so we use a slower pace without a key.
+    min_interval_seconds: 1.1
+    min_interval_seconds_without_key: 3.0
+    page_size: 1000
+
+# Each topic has its own query per source, because every API has a different
+# query syntax.
+topics:
+  network_security:
+    name: "Network Security"
+    arxiv: 'cat:cs.CR AND (ti:"network security" OR abs:"network security")'
+    openalex: '"network security"'
+    semantic_scholar: '"network security"'
+  intrusion_detection:
+    name: "Intrusion Detection"
+    arxiv: '(ti:"intrusion detection" OR abs:"intrusion detection")'
+    openalex: '"intrusion detection"'
+    semantic_scholar: '"intrusion detection"'
+  ai_for_cybersecurity:
+    name: "AI for Cybersecurity"
+    arxiv: 'cat:cs.CR AND (abs:"machine learning" OR abs:"deep learning" OR abs:"large language model")'
+    openalex: '("machine learning" OR "deep learning" OR "artificial intelligence") AND (cybersecurity OR "cyber security")'
+    semantic_scholar: '("machine learning" | "deep learning" | "artificial intelligence") + (cybersecurity | "cyber security")'
+
+logging:
+  directory: "logs"
+  file_name: "ingestion.log"
