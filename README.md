@@ -33,6 +33,43 @@ python main.py check
 python -m pytest
 ```
 
+## Docker (PostgreSQL + application)
+
+Needs Docker Desktop with Compose v2. To keep images off drive C, set
+*Settings → Resources → Advanced → Disk image location* (for example `D:\Docker`)
+before the first pull.
+
+```powershell
+Copy-Item .env.example .env       # then set POSTGRES_PASSWORD and the same value in DATABASE_URL
+docker compose up -d              # PostgreSQL 16 + pgvector 0.8.0 on 127.0.0.1:5432 (volume "pgdata")
+python main.py check              # the host app now uses DATABASE_URL from .env
+
+# Optional: run the application itself in a container (profile "app")
+docker compose --profile app build app
+docker compose run --rm app check
+docker compose run --rm app rag-eval --retrieval-only
+docker compose run --rm app chat --provider ollama   # Ollama stays on the host (GPU)
+
+docker compose down               # stop; data stays in the pgdata volume
+```
+
+| Item | Choice | Why |
+|---|---|---|
+| Image | `pgvector/pgvector:0.8.0-pg16` (pinned) | Same PostgreSQL 16 as before, newer pgvector than the embedded 0.6.2 |
+| Port | `127.0.0.1:5432` only | The database is not reachable from the network |
+| Host name in `DATABASE_URL` | `127.0.0.1`, **not** `localhost` | On Windows `localhost` resolves to IPv6 `::1` first; the connection then stalls (measured: 8 s with a timeout, a hang without) |
+| App image | `python:3.11-slim` + Java 17 + CPU-only PyTorch, non-root user | PySpark runs with Java 17 inside the image regardless of the host's Java 8 |
+| Ollama | Host, reached at `host.docker.internal:11434` | GPU access is simpler outside Docker on Windows |
+
+**Moving existing data.** `scripts/migrate_embedded_to_docker.py` copies the
+embedded development database (`data/pgdata`) into the Docker database with the
+`pg_dump`/`pg_restore` that ship with `pgserver`, refuses to overwrite a
+non-empty target, and compares row counts per table. Run on 2026-11-02: 377
+papers, 381 source records, 7,691 chunks - identical counts on both sides.
+
+**Tests against Docker:** set `TEST_DATABASE_URL` to the same URL as
+`DATABASE_URL`; every test runs in its own temporary schema and drops it.
+
 ## Data ingestion (Phase 1)
 
 ```powershell
@@ -337,10 +374,18 @@ main.py                       Entry point
 
 ## Database
 
-Set `DATABASE_URL` in `.env` to use your own PostgreSQL (with the pgvector
-extension). If it is empty, development and tests use an embedded
-PostgreSQL 16 + pgvector instance provided by the `pgserver` package and stored
-in `data/pgdata/` (git-ignored).
+The default is PostgreSQL in Docker (see [Docker](#docker-postgresql--application)),
+selected by `DATABASE_URL` in `.env`. If `DATABASE_URL` is empty, development
+and tests fall back to an embedded PostgreSQL 16 + pgvector instance provided by
+the `pgserver` package and stored in `data/pgdata/` (git-ignored). On Windows
+the embedded server can get stuck in crash recovery because its log file lives
+inside the data directory; Docker avoids this.
+
+**Vector search accuracy.** pgvector's HNSW index is approximate and SQL
+filters are applied after it, so retrieval sets `hnsw.ef_search = 200`
+(`rag.hnsw_ef_search`). With the default of 40 one test question lost its best
+chunk (similarity 0.379 instead of 0.414 from an exact search); with 200 the
+results match exact search on this corpus.
 
 ## Branch strategy
 

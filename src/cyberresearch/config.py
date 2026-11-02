@@ -96,6 +96,7 @@ class RagSettings:
     max_tokens: int = 16000
     top_k: int = 8
     candidate_k: int = 40
+    hnsw_ef_search: int = 200
     max_chunks_per_paper: int = 3
     min_similarity: float = 0.30
     weak_similarity: float = 0.45
@@ -144,6 +145,9 @@ def _rag_settings(raw: dict[str, Any]) -> RagSettings:
         raise ValueError("rag.provider must be 'claude' or 'ollama'")
     if "exclude_sections" in values:
         values["exclude_sections"] = tuple(values["exclude_sections"])
+    # Inside Docker, Ollama runs on the host (host.docker.internal), not localhost.
+    if _env("OLLAMA_BASE_URL"):
+        values["ollama_base_url"] = _env("OLLAMA_BASE_URL")
     return RagSettings(**values)
 
 

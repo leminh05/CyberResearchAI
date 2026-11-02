@@ -134,6 +134,10 @@ class Retriever:
         """Return up to ``top_k`` evidence chunks, most similar first."""
         filters = filters or SearchFilters()
         vector = to_vector_literal(self.embedder.embed([query])[0])
+        # HNSW is approximate and SQL filters are applied after it, so a small
+        # search breadth can miss the best matching chunk (see settings.yaml).
+        # SET cannot take a bind parameter; the value is a validated int.
+        self.conn.execute(f"SET hnsw.ef_search = {int(self.settings.hnsw_ef_search)}")
         conditions, params = ["TRUE"], {"vec": vector, "limit": self.settings.candidate_k}
         if filters.year_min is not None:
             conditions.append("p.year >= %(year_min)s")

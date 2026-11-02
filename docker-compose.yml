@@ -1,0 +1,58 @@
+# CyberResearchAI local stack.
+#
+#   docker compose up -d                 # PostgreSQL 16 + pgvector (always)
+#   docker compose run --rm app check    # the application in a container (profile "app")
+#   docker compose run --rm app chat --provider ollama
+#
+# Values come from .env (see .env.example). Ollama stays on the Windows host so
+# it can use the GPU; the app container reaches it at host.docker.internal.
+
+name: cyberresearch
+
+services:
+  postgres:
+    # Pinned version: pgvector 0.8.0 on PostgreSQL 16.
+    image: pgvector/pgvector:0.8.0-pg16
+    container_name: cyberresearch-postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-cyber}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: ${POSTGRES_DB:-cyberresearch}
+    ports:
+      # Bound to localhost only: the database is not reachable from the network.
+      - "127.0.0.1:${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./docker/postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  app:
+    build: .
+    image: cyberresearch-app:local
+    profiles: ["app"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      # Inside the Compose network the database host is the service name.
+      DATABASE_URL: postgresql://${POSTGRES_USER:-cyber}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-cyberresearch}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL_DOCKER:-http://host.docker.internal:11434}
+      HF_HOME: /cache/huggingface
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+      - hf_cache:/cache/huggingface
+    stdin_open: true
+    tty: true
+
+volumes:
+  pgdata:
+  hf_cache:
