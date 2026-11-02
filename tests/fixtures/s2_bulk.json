@@ -1,0 +1,44 @@
+{
+  "total": 3,
+  "token": "PCOA3RZZB2ADADAEYCX2BLJJRDEGL",
+  "data": [
+    {
+      "paperId": "abc123",
+      "externalIds": {"ArXiv": "2401.05678", "CorpusId": 1},
+      "url": "https://www.semanticscholar.org/paper/abc123",
+      "title": "Graph Neural Networks for Botnet Detection",
+      "abstract": null,
+      "venue": "ACM CCS",
+      "year": 2024,
+      "publicationDate": "2024-01-10",
+      "authors": [{"authorId": "1", "name": "Carol Le"}],
+      "isOpenAccess": true,
+      "openAccessPdf": {"url": "https://arxiv.org/pdf/2401.05678"},
+      "fieldsOfStudy": ["Computer Science"]
+    },
+    {
+      "paperId": "def456",
+      "externalIds": {},
+      "url": null,
+      "title": "Federated learning in smart-grid security!",
+      "abstract": "FL for smart grids.",
+      "venue": "",
+      "year": 2024,
+      "publicationDate": null,
+      "authors": [{"authorId": "2", "name": "Dan Pham"}],
+      "isOpenAccess": false,
+      "openAccessPdf": null,
+      "fieldsOfStudy": null
+    },
+    {
+      "paperId": "ghi789",
+      "externalIds": {"DOI": "10.5555/XYZ"},
+      "title": null,
+      "abstract": null,
+      "year": null,
+      "publicationDate": null,
+      "authors": null,
+      "fieldsOfStudy": []
+    }
+  ]
+}

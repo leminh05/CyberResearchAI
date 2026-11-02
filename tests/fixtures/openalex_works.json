@@ -1,0 +1,48 @@
+{
+  "meta": {"count": 3, "per_page": 100, "next_cursor": "IlsxNjA5MzcyODAwMDAwXSI="},
+  "results": [
+    {
+      "id": "https://openalex.org/W111",
+      "doi": "https://doi.org/10.1109/tifs.2024.0001",
+      "title": "Deep Learning for Network Intrusion Detection",
+      "display_name": "Deep Learning for Network Intrusion Detection",
+      "publication_year": 2024,
+      "publication_date": "2024-01-03",
+      "authorships": [
+        {"author": {"display_name": "Alice Nguyen"}},
+        {"author": {"display_name": "Bob Tran"}}
+      ],
+      "abstract_inverted_index": {"We": [0], "propose": [1], "a": [2], "model.": [3]},
+      "primary_location": {
+        "landing_page_url": "https://doi.org/10.1109/tifs.2024.0001",
+        "source": {"display_name": "IEEE Transactions on Information Forensics and Security"}
+      },
+      "locations": [
+        {"landing_page_url": "https://doi.org/10.1109/tifs.2024.0001", "pdf_url": null},
+        {"landing_page_url": "https://arxiv.org/abs/2401.01234", "pdf_url": "https://arxiv.org/pdf/2401.01234"}
+      ],
+      "open_access": {"is_oa": true, "oa_url": "https://arxiv.org/pdf/2401.01234"},
+      "best_oa_location": {"pdf_url": "https://arxiv.org/pdf/2401.01234"},
+      "topics": [{"display_name": "Network Security and Intrusion Detection"}],
+      "cited_by_count": 12
+    },
+    {
+      "id": "https://openalex.org/W222",
+      "doi": null,
+      "title": "Federated Learning in Smart Grid Security",
+      "publication_year": 2024,
+      "publication_date": null,
+      "authorships": [],
+      "abstract_inverted_index": null,
+      "primary_location": null,
+      "locations": [],
+      "open_access": {"is_oa": false},
+      "best_oa_location": null,
+      "cited_by_count": 0
+    },
+    {
+      "id": null,
+      "title": "Record without an id is skipped"
+    }
+  ]
+}
