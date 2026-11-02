@@ -20,6 +20,7 @@ env/
 data/raw/
 data/processed/
 data/pdfs/
+data/pgdata/
 *.pdf
 
 # Logs
