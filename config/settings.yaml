@@ -58,6 +58,36 @@ topics:
     openalex: '("machine learning" OR "deep learning" OR "artificial intelligence") AND (cybersecurity OR "cyber security")'
     semantic_scholar: '("machine learning" | "deep learning" | "artificial intelligence") + (cybersecurity | "cyber security")'
 
+processing:
+  # Downloaded PDFs are stored here (git-ignored, never committed).
+  pdf_directory: "data/pdfs"
+  max_pdf_megabytes: 30
+  # A non-arXiv PDF is downloaded only when its license is in this list.
+  # arXiv papers are always allowed (arXiv grants a distribution license and
+  # permits programmatic access at <= 1 request / 3 s via export.arxiv.org).
+  allowed_licenses: ["cc0", "public-domain", "cc-by", "cc-by-sa", "cc-by-nc", "cc-by-nc-sa", "cc-by-nd", "cc-by-nc-nd"]
+  # Unknown/custom licenses ("other-oa", missing) are skipped unless enabled.
+  allow_unknown_license: false
+  # Politeness delay between requests to the same publisher host.
+  host_min_interval_seconds: 1.0
+  # Chunking: target size and overlap measured in words.
+  chunk_max_words: 220
+  chunk_overlap_words: 40
+  # Sections excluded from chunks (bibliographies add noise to retrieval).
+  skip_sections: ["References", "Bibliography", "Acknowledgments", "Acknowledgements"]
+
+embedding:
+  # 384-dimensional, fast on CPU, widely used for semantic search.
+  model_name: "sentence-transformers/all-MiniLM-L6-v2"
+  dimension: 384
+  batch_size: 32
+
+spark:
+  # local[*] = one JVM using all CPU cores of this machine (NOT a cluster).
+  master: "local[*]"
+  driver_memory: "2g"
+  shuffle_partitions: 8
+
 logging:
   directory: "logs"
   file_name: "ingestion.log"

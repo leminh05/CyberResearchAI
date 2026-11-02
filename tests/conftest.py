@@ -27,6 +27,21 @@ def database_url(tmp_path_factory: pytest.TempPathFactory):
     server.cleanup()
 
 
+@pytest.fixture(scope="session")
+def spark():
+    """One local Spark session shared by all Spark tests (startup is slow)."""
+    import shutil
+
+    if shutil.which("java") is None:
+        pytest.skip("Java is not installed")
+    from cyberresearch.bigdata.spark_jobs import create_spark_session
+    from cyberresearch.config import SparkSettings
+
+    session = create_spark_session(SparkSettings(master="local[2]", shuffle_partitions=2), "tests")
+    yield session
+    session.stop()
+
+
 @pytest.fixture
 def store(database_url: str):
     """A PostgresStore whose tables live in a fresh, temporary schema."""

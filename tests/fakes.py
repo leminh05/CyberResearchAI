@@ -19,6 +19,7 @@ class FakeResponse:
     def __init__(self, status_code: int = 200, text: str = "", json_data: Any = None, headers: dict | None = None):
         self.status_code = status_code
         self.text = text if json_data is None else json.dumps(json_data)
+        self.content = self.text.encode("utf-8")
         self._json = json_data
         self.headers = headers or {}
 
