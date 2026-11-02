@@ -1,7 +1,11 @@
 """CyberResearchAI entry point.
 
 Usage (PowerShell, from the project root with .venv activated):
-    python main.py check     # verify environment and configuration
+    python main.py check                                  # verify environment and configuration
+    python main.py init-db                                # create database tables
+    python main.py daily [--sources arxiv] [--max-records 50]
+    python main.py backfill --start 2023-01-01 [--end 2024-12-31]
+    python main.py status                                 # counts, checkpoints, recent logs
 """
 
 from __future__ import annotations
@@ -14,6 +18,8 @@ import sys
 sys.path.insert(0, "src")
 
 from cyberresearch.config import PROJECT_ROOT, load_settings  # noqa: E402
+from cyberresearch.ingestion.cli import add_ingestion_commands, run_ingestion_command  # noqa: E402
+from cyberresearch.logging_setup import setup_logging  # noqa: E402
 
 
 def _java_version() -> str | None:
@@ -54,11 +60,16 @@ def check_environment() -> int:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="CyberResearchAI")
-    parser.add_argument("command", choices=["check"], help="command to run")
+    subparsers = parser.add_subparsers(dest="command", required=True)
+    subparsers.add_parser("check", help="verify environment and configuration")
+    add_ingestion_commands(subparsers)
     args = parser.parse_args()
+
     if args.command == "check":
         return check_environment()
-    return 1
+    settings = load_settings()
+    setup_logging(settings.log_level, settings.log_dir, settings.log_file_name)
+    return run_ingestion_command(args, settings)
 
 
 if __name__ == "__main__":
