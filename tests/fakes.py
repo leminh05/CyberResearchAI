@@ -48,6 +48,26 @@ def fake_http(session: FakeSession, source: str = "test", sleeps: list[float] | 
     return HttpClient(source, 0.0, FAST_HTTP, session=session, sleep=record.append, jitter=lambda: 0.0)
 
 
+class HashEmbedder:
+    """Deterministic 384-d bag-of-words embedder: texts sharing words are similar."""
+
+    model_name = "test-hash-embedder"
+    dimension = 384
+
+    def embed(self, texts: list[str]) -> list[list[float]]:
+        import hashlib
+        import math
+
+        vectors = []
+        for text in texts:
+            v = [0.0] * self.dimension
+            for word in text.lower().split():
+                v[int(hashlib.md5(word.strip(".,?!").encode()).hexdigest(), 16) % self.dimension] += 1.0
+            norm = math.sqrt(sum(x * x for x in v)) or 1.0
+            vectors.append([x / norm for x in v])
+        return vectors
+
+
 def fixture_text(name: str) -> str:
     return (FIXTURES / name).read_text(encoding="utf-8")
 

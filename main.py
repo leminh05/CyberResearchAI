@@ -9,6 +9,9 @@ Usage (PowerShell, from the project root with .venv activated):
     python main.py process [--limit 20] [--no-download]   # PDFs -> chunks -> embeddings
     python main.py search "intrusion detection with GNN"  # semantic search over chunks
     python main.py benchmark [--sizes 1000 10000]         # plain Python vs PySpark
+    python main.py chat                                   # terminal research chatbot (Claude)
+    python main.py ask "How are GNNs used for IDS?"       # one question, then exit
+    python main.py rag-eval [--retrieval-only]            # run the test questions
 """
 
 from __future__ import annotations
@@ -24,6 +27,7 @@ from cyberresearch.config import PROJECT_ROOT, load_settings  # noqa: E402
 from cyberresearch.ingestion.cli import add_ingestion_commands, run_ingestion_command  # noqa: E402
 from cyberresearch.logging_setup import setup_logging  # noqa: E402
 from cyberresearch.processing.cli import add_processing_commands, run_processing_command  # noqa: E402
+from cyberresearch.rag.cli import RAG_COMMANDS, add_rag_commands, run_rag_command  # noqa: E402
 
 PROCESSING_COMMANDS = {"process", "search", "benchmark"}
 
@@ -61,6 +65,7 @@ def check_environment() -> int:
     for name in ("semantic_scholar_api_key", "openalex_api_key"):
         # Only report whether a key exists; never print the value.
         print(f"{name:<24}: {'set' if getattr(settings, name) else 'not set (optional)'}")
+    print(f"{'anthropic_api_key':<24}: {'set' if settings.anthropic_api_key_present else 'not set (needed for --provider claude)'}")
     return 0
 
 
@@ -70,6 +75,7 @@ def main() -> int:
     subparsers.add_parser("check", help="verify environment and configuration")
     add_ingestion_commands(subparsers)
     add_processing_commands(subparsers)
+    add_rag_commands(subparsers)
     args = parser.parse_args()
 
     if args.command == "check":
@@ -78,6 +84,8 @@ def main() -> int:
     setup_logging(settings.log_level, settings.log_dir, settings.log_file_name)
     if args.command in PROCESSING_COMMANDS:
         return run_processing_command(args, settings)
+    if args.command in RAG_COMMANDS:
+        return run_rag_command(args, settings)
     return run_ingestion_command(args, settings)
 
 

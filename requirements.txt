@@ -15,3 +15,6 @@ sentence-transformers>=3.0
 # PySpark 3.5.x is the last line that supports Java 8 (this machine's JRE);
 # PySpark 4.x requires Java 17+.
 pyspark>=3.5.9,<3.6
+
+# Phase 3: RAG engine (official Anthropic SDK for the Claude API)
+anthropic>=2.3,<3

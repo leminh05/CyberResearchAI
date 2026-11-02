@@ -1,0 +1,77 @@
+# Test questions for the RAG engine (python main.py rag-eval).
+#
+# category:
+#   sufficient - the corpus contains papers that answer the question
+#   weak       - the corpus touches the topic only loosely
+#   outside    - nothing in the corpus can answer it
+#   ambiguous  - a key term has several meanings in security
+# Pass rules are implemented in cyberresearch/rag/evaluation.py.
+
+questions:
+  # ---------------------------------------------------------- sufficient
+  - id: ids-gnn
+    topic: intrusion_detection
+    category: sufficient
+    question: "How are graph neural networks used for network intrusion detection?"
+  - id: ids-drift
+    topic: intrusion_detection
+    category: sufficient
+    question: "Why do machine-learning intrusion detection systems degrade after deployment when network traffic changes?"
+  - id: ai-threat-hunting
+    topic: ai_for_cybersecurity
+    category: sufficient
+    question: "How can language models support threat hunting?"
+  - id: ai-rl-vulns
+    topic: ai_for_cybersecurity
+    category: sufficient
+    question: "How is reinforcement learning applied to software vulnerability analysis?"
+  - id: ns-datasets
+    topic: network_security
+    category: sufficient
+    question: "Which datasets are used to evaluate network intrusion detection models?"
+  - id: vi-llm-vulns
+    topic: ai_for_cybersecurity
+    category: sufficient
+    question: "Mô hình ngôn ngữ được dùng như thế nào để phát hiện lỗ hổng phần mềm?"
+
+  # ---------------------------------------------------------------- weak
+  - id: weak-bgp
+    topic: network_security
+    category: weak
+    question: "How are BGP prefix hijacking attacks detected in real time by Internet service providers?"
+  - id: weak-5g
+    topic: network_security
+    category: weak
+    question: "What detection accuracy do intrusion detection systems reach on 5G core network signalling traffic?"
+  - id: weak-pqc
+    topic: ai_for_cybersecurity
+    category: weak
+    question: "How does post-quantum cryptography affect the performance of machine-learning intrusion detection on IoT devices?"
+
+  # ------------------------------------------------------------- outside
+  - id: out-cake
+    topic: none
+    category: outside
+    question: "What is the best recipe for a chocolate cake?"
+  - id: out-football
+    topic: none
+    category: outside
+    question: "Who won the 2022 FIFA World Cup final?"
+  - id: out-riemann
+    topic: none
+    category: outside
+    question: "Outline a proof of the Riemann hypothesis."
+
+  # ----------------------------------------------------------- ambiguous
+  - id: amb-poisoning
+    topic: ai_for_cybersecurity
+    category: ambiguous
+    question: "How do poisoning attacks work and how can they be detected?"
+  - id: amb-drift
+    topic: intrusion_detection
+    category: ambiguous
+    question: "How is drift handled?"
+  - id: amb-agents
+    topic: ai_for_cybersecurity
+    category: ambiguous
+    question: "Are agents effective for security monitoring?"
