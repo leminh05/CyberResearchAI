@@ -8,6 +8,7 @@ Big Data-based Cybersecurity Research Assistant with RAG and Verified Citations
 | 0 | Repository audit, environment, configuration | Done |
 | 1 | Academic data ingestion (arXiv, OpenAlex, Semantic Scholar) | Done |
 | 2 | PDF processing, chunking, embeddings, pgvector, PySpark + benchmark | Done |
+| 3 | RAG engine with verified citations + terminal chatbot | Done |
 
 ## Setup (Windows PowerShell)
 
@@ -31,6 +32,43 @@ python main.py check
 # 6. Run the tests
 python -m pytest
 ```
+
+## Docker (PostgreSQL + application)
+
+Needs Docker Desktop with Compose v2. To keep images off drive C, set
+*Settings → Resources → Advanced → Disk image location* (for example `D:\Docker`)
+before the first pull.
+
+```powershell
+Copy-Item .env.example .env       # then set POSTGRES_PASSWORD and the same value in DATABASE_URL
+docker compose up -d              # PostgreSQL 16 + pgvector 0.8.0 on 127.0.0.1:5432 (volume "pgdata")
+python main.py check              # the host app now uses DATABASE_URL from .env
+
+# Optional: run the application itself in a container (profile "app")
+docker compose --profile app build app
+docker compose run --rm app check
+docker compose run --rm app rag-eval --retrieval-only
+docker compose run --rm app chat --provider ollama   # Ollama stays on the host (GPU)
+
+docker compose down               # stop; data stays in the pgdata volume
+```
+
+| Item | Choice | Why |
+|---|---|---|
+| Image | `pgvector/pgvector:0.8.0-pg16` (pinned) | Same PostgreSQL 16 as before, newer pgvector than the embedded 0.6.2 |
+| Port | `127.0.0.1:5432` only | The database is not reachable from the network |
+| Host name in `DATABASE_URL` | `127.0.0.1`, **not** `localhost` | On Windows `localhost` resolves to IPv6 `::1` first; the connection then stalls (measured: 8 s with a timeout, a hang without) |
+| App image | `python:3.11-slim` + Java 17 + CPU-only PyTorch, non-root user | PySpark runs with Java 17 inside the image regardless of the host's Java 8 |
+| Ollama | Host, reached at `host.docker.internal:11434` | GPU access is simpler outside Docker on Windows |
+
+**Moving existing data.** `scripts/migrate_embedded_to_docker.py` copies the
+embedded development database (`data/pgdata`) into the Docker database with the
+`pg_dump`/`pg_restore` that ship with `pgserver`, refuses to overwrite a
+non-empty target, and compares row counts per table. Run on 2026-11-02: 377
+papers, 381 source records, 7,691 chunks - identical counts on both sides.
+
+**Tests against Docker:** set `TEST_DATABASE_URL` to the same URL as
+`DATABASE_URL`; every test runs in its own temporary schema and drops it.
 
 ## Data ingestion (Phase 1)
 
@@ -198,6 +236,78 @@ What this does **not** show:
   which serializes data between the JVM and Python workers; built-in Spark
   functions (used for metadata) avoid that cost.
 
+## RAG chatbot (Phase 3)
+
+Two interchangeable answer generators, selected with `rag.provider` in
+`config/settings.yaml` or `--provider` on the command line:
+
+| Provider | Needs | Notes |
+|---|---|---|
+| `claude` (default) | `ANTHROPIC_API_KEY` in `.env` (billed per use) | `claude-opus-5-5`, structured output, refusal fallback |
+| `ollama` | [Ollama](https://ollama.com) running locally + `ollama pull qwen2.5:7b` | Free, offline. On this laptop (GTX 1650 Ti 4 GB, 32 GB RAM) about 2-3 min per answer; less accurate |
+
+Prompt, JSON schema and citation validation are the same for both, so a
+weaker local model cannot slip unverified citations through - its answers are
+downgraded instead. Ollama's context window is set explicitly
+(`rag.ollama.num_ctx`), and a prompt that fills it is rejected, because Ollama
+otherwise silently cuts long prompts. To keep models off drive C, set the user
+environment variable `OLLAMA_MODELS` (for example `D:\Ollama\models`) and
+restart Ollama before pulling.
+
+```powershell
+python main.py chat --provider ollama                  # free local model
+python main.py chat                                    # interactive chatbot (Claude)
+python main.py chat --year-min 2025 --topic intrusion_detection
+python main.py ask "How are graph neural networks used for intrusion detection?"
+python main.py ask "..." --json                        # validated answer + evidence as JSON
+python main.py rag-eval --retrieval-only               # test questions, no Claude calls
+python main.py rag-eval                                # test questions, full pipeline
+```
+
+Chat commands: `/citations` (references with the verified quotes), `/evidence`
+(all retrieved chunks), `/filter year>=2024 | year<=Y | topic=<key> |
+source=pdf|abstract | clear`, `/new` (forget the conversation), `/help`, `/exit`.
+
+```
+question ──> embed (same model as chunks) ──> pgvector search + SQL filters ──> per-paper cap ──> top-K evidence
+                                                                                        │
+             best similarity < min_similarity ──> "insufficient evidence" (Claude not called)
+                                                                                        │
+Claude (claude-opus-5-5, structured JSON) <── evidence E1..Ek + question + previous turns
+   │
+   └─> claims + citations {evidence_id, verbatim quote} ──> validation ──> answer + references from the database
+```
+
+| Concern | Implementation (`src/cyberresearch/rag/`) |
+|---|---|
+| Same embedding model | `retrieval.py` refuses to run if `paper_chunks.embedding_model` differs from the query embedder |
+| Metadata filtering | year range, topic, `pdf`/`abstract`, excluded sections (default: `Front Matter`), paper ids - all in SQL |
+| Top-K selection | 40 nearest candidates → at most 3 chunks per paper → best 8 |
+| Reranking | **Not used** (see below) |
+| Grounded prompt | `prompts.py`: evidence in `<evidence id="E3" ...>` blocks with year, section, page and similarity; no URLs or DOIs are shown to Claude; text inside excerpts is treated as data (prompt-injection guard) |
+| Structured output | `output_config.format` JSON schema: `answer_status`, `summary`, `claims[{statement, kind: evidence\|interpretation, citations[{evidence_id, quote}]}]`, `ambiguity_note`, `limitations`, `follow_up_suggestions` |
+| Citation validation | `citations.py`: the evidence id must be one retrieved for this question **and** the quote (≥ 5 words) must occur in that chunk's stored text. Unverified citations are dropped; an evidence claim with none left is removed and the answer is downgraded |
+| Citation format | Built from the database, never from model text: title, authors, year, DOI → arXiv → landing-page URL, section and page (or "abstract"), evidence id → `paper_id`, `chunk_id`, chunk number |
+| Arbitrary URLs | Any URL, DOI or arXiv id written by Claude is removed and reported |
+| Insufficient evidence | Two layers: a similarity gate before Claude, and Claude's own `insufficient_evidence` / `partial` / `out_of_scope` status; evidence claims are never shown with those statuses |
+| Evidence vs interpretation | Separate sections in the answer: "Findings from the papers" (cited) and "Interpretation" (assistant's reasoning) |
+| Follow-ups | The previous question is added to the retrieval query; the last 3 turns are given to Claude as context, marked "not evidence" |
+| Refusals | `fallbacks: "default"` (beta `server-side-fallback-2026-07-01`) re-runs a declined request on the model Anthropic recommends for that category; a final refusal is shown as "declined", never as an answer |
+
+**Test questions** (`config/rag_test_questions.yaml`): 15 questions on network
+security, intrusion detection and AI for cybersecurity, in four groups -
+sufficient evidence, weak evidence, outside the corpus, ambiguous terms (one is
+in Vietnamese). Latest run with the local model: **15/15 passed**, see
+[docs/rag_eval_results.md](docs/rag_eval_results.md). The Claude API path is
+covered by unit tests with a fake client; it has not been run live yet.
+
+**Why no reranker.** A cross-encoder reranker would add a second model
+download and per-question latency. On the test questions the bi-encoder
+ranking with the per-paper cap already puts on-topic chunks first, and Claude
+discards irrelevant excerpts itself (it must quote what it cites). Reranking
+becomes worth measuring when the corpus grows or the Phase 4 evaluation shows
+relevant chunks ranked below the top 8.
+
 ## Tests
 
 ```powershell
@@ -247,6 +357,16 @@ src/cyberresearch/
     python_baseline.py        Same rules in plain Python
     dataset.py                Benchmark dataset (real + synthetic scale-up)
     benchmark.py              Python vs Spark timing and memory
+  rag/
+    retrieval.py              Query embedding, filters, top-K, diversity
+    prompts.py                System prompt, evidence blocks, JSON schema
+    llm.py                    Claude API client (structured output, fallback)
+    ollama_client.py          Local Ollama client (same interface)
+    citations.py              Citation mapping and validation
+    engine.py                 Retrieve -> gate -> generate -> validate
+    chat.py                   Terminal chatbot
+    evaluation.py             Test-question runner and pass rules
+config/rag_test_questions.yaml  Test questions (sufficient/weak/outside/ambiguous)
 docs/benchmark_results.md     Latest benchmark report (generated)
 tests/                        Unit tests (+ tests/live for real APIs)
 main.py                       Entry point
@@ -254,27 +374,18 @@ main.py                       Entry point
 
 ## Database
 
-Set `DATABASE_URL` in `.env` to use your own PostgreSQL (with the pgvector
-extension). If it is empty, development and tests use an embedded
-PostgreSQL 16 + pgvector instance provided by the `pgserver` package and stored
-in `data/pgdata/` (git-ignored).
+The default is PostgreSQL in Docker (see [Docker](#docker-postgresql--application)),
+selected by `DATABASE_URL` in `.env`. If `DATABASE_URL` is empty, development
+and tests fall back to an embedded PostgreSQL 16 + pgvector instance provided by
+the `pgserver` package and stored in `data/pgdata/` (git-ignored). On Windows
+the embedded server can get stuck in crash recovery because its log file lives
+inside the data directory; Docker avoids this.
 
-## Claude on GitHub (`@claude`)
-
-`.github/workflows/claude.yml` lets the repository owner or collaborators
-mention `@claude` in an issue, PR comment or review; Claude replies and can
-push commits as `claude[bot]` (branches prefixed `claude/`).
-
-Setup, done once by the owner:
-
-1. Install the Claude GitHub App for this repository: https://github.com/apps/claude
-2. Add **one** repository secret (Settings > Secrets and variables > Actions):
-   `CLAUDE_CODE_OAUTH_TOKEN` (Claude Pro/Max, created with `claude setup-token`)
-   or `ANTHROPIC_API_KEY` (pay per use). Never commit these values.
-3. Merge the workflow into `main`: GitHub runs comment-triggered workflows
-   from the default branch only.
-
-Runs use GitHub Actions minutes of this private repository.
+**Vector search accuracy.** pgvector's HNSW index is approximate and SQL
+filters are applied after it, so retrieval sets `hnsw.ef_search = 200`
+(`rag.hnsw_ef_search`). With the default of 40 one test question lost its best
+chunk (similarity 0.379 instead of 0.414 from an exact search); with 200 the
+results match exact search on this corpus.
 
 ## Branch strategy
 

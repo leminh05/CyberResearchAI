@@ -82,6 +82,44 @@ embedding:
   dimension: 384
   batch_size: 32
 
+rag:
+  # Answer generator: "claude" (Claude API, needs ANTHROPIC_API_KEY) or
+  # "ollama" (free local model; slower and less accurate). Override per run
+  # with --provider. Citation validation is identical for both.
+  provider: "claude"
+  ollama:
+    base_url: "http://127.0.0.1:11434"
+    model: "qwen2.5:7b"
+    # Context window in tokens. Ollama's default is small and it silently
+    # cuts longer prompts, so it must fit the system prompt + 8 evidence chunks.
+    num_ctx: 12288
+    num_predict: 4096
+    timeout_seconds: 900
+  # Claude model and reasoning effort for answer generation.
+  model: "claude-opus-5-5"
+  effort: "medium"
+  max_tokens: 16000
+  # Retrieval: fetch candidate_k nearest chunks, keep at most
+  # max_chunks_per_paper per paper (diversity), then the best top_k.
+  top_k: 8
+  candidate_k: 40
+  # HNSW search breadth. The default (40) let SQL filters drop the best chunk
+  # (measured: 0.379 vs exact 0.414 for one question); 200 matches exact search
+  # on this corpus at negligible cost.
+  hnsw_ef_search: 200
+  max_chunks_per_paper: 3
+  # Cosine-similarity gates (calibrated on the test questions, see README):
+  # below min_similarity nothing is sent to Claude ("insufficient evidence");
+  # below weak_similarity the evidence is flagged as weak in the prompt.
+  min_similarity: 0.30
+  weak_similarity: 0.45
+  # Sections that rarely contain findings (title page, affiliations).
+  exclude_sections: ["Front Matter"]
+  # Previous turns given to Claude as context for follow-up questions.
+  history_turns: 3
+  # A citation quote must contain at least this many words.
+  min_quote_words: 5
+
 spark:
   # local[*] = one JVM using all CPU cores of this machine (NOT a cluster).
   master: "local[*]"

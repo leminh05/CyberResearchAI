@@ -1,6 +1,5 @@
 """Embedding dimensions, pgvector storage/retrieval and the processing pipeline."""
 
-import hashlib
 import math
 from dataclasses import replace
 from pathlib import Path
@@ -14,26 +13,10 @@ from cyberresearch.processing.chunking import Chunk
 from cyberresearch.processing.downloader import DownloadResult
 from cyberresearch.processing.pipeline import ProcessingPipeline, abstract_chunks
 from cyberresearch.processing.store import ChunkStore, parse_vector, to_vector_literal
+from fakes import HashEmbedder
 from pdf_factory import make_paper_pdf
 
 DIM = 384
-
-
-class HashEmbedder:
-    """Deterministic bag-of-words embedder: texts sharing words are similar."""
-
-    model_name = "test-hash-embedder"
-    dimension = DIM
-
-    def embed(self, texts: list[str]) -> list[list[float]]:
-        vectors = []
-        for text in texts:
-            v = [0.0] * DIM
-            for word in text.lower().split():
-                v[int(hashlib.md5(word.strip(".,").encode()).hexdigest(), 16) % DIM] += 1.0
-            norm = math.sqrt(sum(x * x for x in v)) or 1.0
-            vectors.append([x / norm for x in v])
-        return vectors
 
 
 def chunk(i: int, text: str, page: int | None = 1) -> Chunk:
