@@ -7,8 +7,10 @@ requires-python = ">=3.11,<3.12"
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 testpaths = ["tests"]
-addopts = "-ra -m 'not live'"
+addopts = "-ra -m 'not live and not model'"
 markers = [
     "live: calls real external APIs (run with: pytest -m live)",
+    "model: loads the real Sentence Transformers model (run with: pytest -m model)",
     "db: requires a PostgreSQL database",
+    "spark: starts a local Spark session (needs Java)",
 ]

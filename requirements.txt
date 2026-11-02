@@ -1,5 +1,17 @@
-# Runtime dependencies (Phase 1: academic data ingestion)
+# Runtime dependencies
+
+# Phase 1: academic data ingestion
 requests>=2.32,<3
 python-dotenv>=1.0,<2
 PyYAML>=6.0,<7
 psycopg[binary]>=3.2,<4
+
+# Phase 2: PDF processing, embeddings, Big Data
+# PyMuPDF: fast PDF text extraction with page numbers (AGPL license; fine for
+# academic use, check before any commercial use).
+pymupdf>=1.24
+# Pulls in PyTorch (CPU) and transformers; the model is downloaded on first use.
+sentence-transformers>=3.0
+# PySpark 3.5.x is the last line that supports Java 8 (this machine's JRE);
+# PySpark 4.x requires Java 17+.
+pyspark>=3.5.9,<3.6

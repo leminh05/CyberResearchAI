@@ -7,6 +7,7 @@ Big Data-based Cybersecurity Research Assistant with RAG and Verified Citations
 |---|---|---|
 | 0 | Repository audit, environment, configuration | Done |
 | 1 | Academic data ingestion (arXiv, OpenAlex, Semantic Scholar) | Done |
+| 2 | PDF processing, chunking, embeddings, pgvector, PySpark + benchmark | Done |
 
 ## Setup (Windows PowerShell)
 
@@ -85,12 +86,129 @@ PDFs are **not** downloaded in this phase.
 - **arXiv** asks for at most one request every 3 seconds; large backfills are
   therefore slow by design.
 
+## PDF processing and embeddings (Phase 2)
+
+```powershell
+python main.py process --limit 40          # access check -> download -> extract -> chunk -> embed -> store
+python main.py process --no-download       # abstracts only, no PDF downloads
+python main.py process --reprocess-pdfs    # re-chunk PDFs already on disk (after rule changes)
+python main.py search "intrusion detection with graph neural networks" -k 5
+```
+
+```
+papers ──> access policy ──> polite downloader ──> PyMuPDF ──> cleaning ──> sections ──> chunks ──> embeddings ──> pgvector
+           (license check)   (robots.txt,          (blocks     (headers,    (numbered    (page per   (all-MiniLM    (HNSW,
+                              crawl-delay,          per page)   footers,     headings)    word)       -L6-v2, 384d)   cosine)
+                              %PDF check)                       hyphens)
+```
+
+### Legal access policy (`processing/access.py`)
+
+| Case | Decision |
+|---|---|
+| Paper has an arXiv ID | Download from `arxiv.org/pdf/<id>` (arXiv's robots.txt allows `/pdf/` with a **15 s crawl delay**; `export.arxiv.org` disallows it) |
+| OpenAlex / Semantic Scholar PDF with a Creative Commons or public-domain license | Download |
+| License missing, `other-oa`, or restrictive | **Not downloaded**; the abstract from the API is used instead |
+| No PDF URL | Abstract only |
+
+The downloader also honours `robots.txt` (a site that disallows us or whose
+robots.txt is unavailable is skipped), rate-limits each host, rejects files
+larger than 30 MB, and checks the `%PDF-` signature (many "PDF" links are HTML
+landing pages). PDFs are stored in `data/pdfs/` (git-ignored, never committed).
+
+### Text processing (`processing/`)
+
+| Step | Module | What it does |
+|---|---|---|
+| Extract | `extract.py` | PyMuPDF text blocks per page; rejects non-PDF, encrypted and scanned (no text layer) files |
+| Clean | `cleaning.py` | Removes running headers/footers (blocks repeated on ≥ 50% of pages), page numbers, arXiv margin stamps; fixes ligatures and hyphenation |
+| Sections | `sections.py` | Detects `1 Introduction`, `1\nIntroduction` (LaTeX layout), `IV. EXPERIMENTS`, `References`; a numbered heading is accepted only if its number follows the previous one, which rejects list items and algorithm steps |
+| Chunk | `chunking.py` | ~220 words with 40 words overlap, never across sections, cut at sentence ends; every word carries its page, so `page_start`/`page_end` are exact; references are excluded |
+| Embed | `embeddings.py` | `sentence-transformers/all-MiniLM-L6-v2`, 384 dimensions, L2-normalized |
+| Store | `store.py` | `pdf_documents` (status per paper) and `paper_chunks` (text, section, pages, URL, `vector(384)`, HNSW index) |
+
+A database `CHECK` constraint makes it impossible to store a PDF chunk without
+a page number. Abstract-only chunks are stored with `content_source =
+'abstract'` and no page, so later phases can cite them as "abstract".
+
+### PySpark (`bigdata/`)
+
+| Job | Spark operations |
+|---|---|
+| Metadata normalization | `regexp_replace`, `lower`, `substring`, `cast`, `when` - built-in JVM functions, no Python UDF |
+| Data filtering | `filter` with null checks and year range |
+| Deduplication | priority key with `coalesce`; `Window.partitionBy(key).orderBy(completeness, source rank)` + `row_number() == 1` |
+| Data quality checks | one `agg` pass for null rates, counts before/after each step, `groupBy(source).count()` |
+| Batch processing | `groupBy(paper_id)` + `collect_list` of pages, then the same Python cleaning/section/chunking code in a UDF, `explode` to one row per chunk |
+
+`bigdata/python_baseline.py` implements exactly the same rules in plain
+Python; tests assert that both produce identical results. Spark runs in
+**local mode** (`local[*]`: one JVM on this machine) - see the benchmark
+section for what this does and does not show.
+
+### Benchmark: plain Python vs PySpark
+
+```powershell
+python main.py benchmark --sizes 1000 10000 100000 300000 --repeats 3
+```
+
+Same input file, same rules, identical output for every size (checked
+record by record). Full report: [docs/benchmark_results.md](docs/benchmark_results.md).
+Measured 2026-11-02 on this laptop (12 logical CPUs, Windows 11, Java 8,
+Spark 3.5.9 `local[*]`, driver memory 2 GB):
+
+| Records | File | Python | Spark | Spark / Python | Python peak heap | Spark JVM heap used |
+|---:|---:|---:|---:|---:|---:|---:|
+| 1,000 | 1.7 MB | 0.08 s | 0.87 s | 10.4x slower | 4 MB | 437 MB |
+| 10,000 | 17.7 MB | 0.82 s | 1.10 s | 1.3x slower | 40 MB | 212 MB |
+| 100,000 | 177 MB | 8.99 s | 4.17 s | 2.2x faster | 397 MB | 505 MB |
+| 300,000 | 532 MB | 26.74 s | 8.79 s | 3.0x faster | 1,195 MB | 849 MB |
+
+Spark session startup: **4.2 s**, paid once per process and *not* included above.
+
+What this shows:
+
+- **Overhead dominates small data.** Planning a job, scheduling tasks and
+  starting the JVM-side work costs ~0.8 s even for 1,000 records; with the
+  4.2 s startup, plain Python wins easily below ~10,000 records. Our real
+  corpus (381 records today) is far below that point.
+- **Spark wins on larger files because it uses all 12 cores.** Python runs
+  on one core; Spark splits the file into partitions processed in parallel.
+  Part of the gain is simply parallelism - a `multiprocessing` version of
+  the Python code would narrow the gap.
+- **Memory grows differently.** The Python version holds every record in a
+  list (heap grows linearly: ~4 KB per record, 1.2 GB at 300k). Spark streams
+  partitions and spills to disk if needed; its JVM heap figure is
+  approximate (it depends on garbage collection) and includes Spark's own
+  overhead, which is why it is large for small inputs.
+
+What this does **not** show:
+
+- **No cluster performance.** Everything ran on one machine. Network shuffle,
+  data locality and executor failures - the main costs and benefits of a
+  real cluster - are not measured. These numbers must not be presented as
+  distributed-scaling results.
+- **Synthetic scale-up.** Only 381 records are real; larger sizes are copies
+  with new identifiers and ~20% injected duplicates (`bigdata/dataset.py`).
+- **Single-key deduplication.** Both implementations use one dedup key per
+  record. Linking records through different identifiers (A~B by DOI, B~C by
+  arXiv ID) needs connected components (e.g. GraphFrames), which is handled
+  by the database stage instead.
+- **Python UDF cost.** The batch-chunking job reuses Python code in a UDF,
+  which serializes data between the JVM and Python workers; built-in Spark
+  functions (used for metadata) avoid that cost.
+
 ## Tests
 
 ```powershell
-python -m pytest              # offline tests (fake HTTP + temporary PostgreSQL)
+python -m pytest              # offline tests (fake HTTP, temporary PostgreSQL, local Spark)
 python -m pytest -m live -v   # real API calls (network required)
+python -m pytest -m model -v  # real Sentence Transformers model (downloads ~90 MB once)
 ```
+
+Test PDFs are generated by `tests/pdf_factory.py` at run time (running
+headers, page footers, arXiv stamp, hyphenation, numbered sections), so no
+binary or copyrighted PDFs are stored in the repository.
 
 Database tests use `TEST_DATABASE_URL` if set; otherwise a temporary embedded
 PostgreSQL. Each test runs in its own throw-away schema.
@@ -113,6 +231,23 @@ src/cyberresearch/
     cli.py                    init-db, daily, backfill, status commands
     clients/                  arxiv.py, openalex.py, semantic_scholar.py
     sql/schema.sql            Table definitions
+  processing/
+    access.py                 Legal PDF access policy
+    downloader.py             robots.txt, crawl-delay, PDF validation
+    extract.py                PyMuPDF text blocks per page
+    cleaning.py               Header/footer/noise removal
+    sections.py               Section heading detection
+    chunking.py               Page-preserving chunking
+    embeddings.py             Sentence Transformers
+    store.py                  pgvector storage and similarity search
+    pipeline.py               Phase 2 pipeline (incremental)
+    sql/processing_schema.sql pdf_documents, paper_chunks
+  bigdata/
+    spark_jobs.py             PySpark DataFrame jobs
+    python_baseline.py        Same rules in plain Python
+    dataset.py                Benchmark dataset (real + synthetic scale-up)
+    benchmark.py              Python vs Spark timing and memory
+docs/benchmark_results.md     Latest benchmark report (generated)
 tests/                        Unit tests (+ tests/live for real APIs)
 main.py                       Entry point
 ```
