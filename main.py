@@ -12,6 +12,7 @@ Usage (PowerShell, from the project root with .venv activated):
     python main.py chat                                   # terminal research chatbot (Claude)
     python main.py ask "How are GNNs used for IDS?"       # one question, then exit
     python main.py rag-eval [--retrieval-only]            # run the test questions
+    python main.py evaluate [--part data retrieval performance answers]  # Phase 4 metrics
 """
 
 from __future__ import annotations
@@ -24,6 +25,7 @@ import sys
 sys.path.insert(0, "src")
 
 from cyberresearch.config import PROJECT_ROOT, load_settings  # noqa: E402
+from cyberresearch.evaluation.cli import add_evaluation_commands, run_evaluation_command  # noqa: E402
 from cyberresearch.ingestion.cli import add_ingestion_commands, run_ingestion_command  # noqa: E402
 from cyberresearch.logging_setup import setup_logging  # noqa: E402
 from cyberresearch.processing.cli import add_processing_commands, run_processing_command  # noqa: E402
@@ -76,6 +78,7 @@ def main() -> int:
     add_ingestion_commands(subparsers)
     add_processing_commands(subparsers)
     add_rag_commands(subparsers)
+    add_evaluation_commands(subparsers)
     args = parser.parse_args()
 
     if args.command == "check":
@@ -86,6 +89,8 @@ def main() -> int:
         return run_processing_command(args, settings)
     if args.command in RAG_COMMANDS:
         return run_rag_command(args, settings)
+    if args.command == "evaluate":
+        return run_evaluation_command(args, settings)
     return run_ingestion_command(args, settings)
 
 
