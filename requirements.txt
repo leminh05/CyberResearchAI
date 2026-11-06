@@ -16,6 +16,9 @@ sentence-transformers>=3.0
 # PySpark 4.x requires Java 17+.
 pyspark>=3.5.9,<3.6
 
+# Streaming: the crawler's Kafka producer (Spark's Kafka connector is added in the Dockerfile)
+kafka-python>=2.1,<3
+
 # Phase 3: RAG engine (official Anthropic SDK for the Claude API)
 anthropic>=2.3,<3
 

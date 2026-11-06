@@ -57,7 +57,11 @@ def create_spark_session(settings: SparkSettings, app_name: str = "CyberResearch
         .config("spark.driver.memory", settings.driver_memory)
         .config("spark.sql.shuffle.partitions", str(settings.shuffle_partitions))
         .config("spark.ui.enabled", "false")
+        # With the default wait, a stage mixing shuffle and HDFS tasks stalled forever in local mode.
+        .config("spark.locality.wait", "0")
         .config("spark.sql.session.timeZone", "UTC")
+        # The writing client decides the replication, not the cluster's own setting.
+        .config("spark.hadoop.dfs.replication", str(settings.hdfs_replication))
         .getOrCreate()
     )
     spark.sparkContext.setLogLevel("ERROR")

@@ -327,6 +327,72 @@ python scripts/build_judgment_pool.py > data/eval/pool.md  # candidates for rele
   methods, numbers and weaknesses in
   [docs/evaluation_report.md](docs/evaluation_report.md).
 
+## HDFS data lake
+
+A small HDFS cluster for the Spark data lake: one NameNode and two DataNodes, with
+every block stored twice. All three run on this machine, so it demonstrates HDFS
+storage and replication, not cluster speed or protection against a machine failing.
+
+```powershell
+docker compose --profile hdfs up -d                        # NameNode UI: http://127.0.0.1:9870
+docker compose --profile app --profile hdfs build app      # once, and after code changes
+docker compose --profile app --profile hdfs run --rm app hdfs-check   # Spark writes, reads back and compares
+docker compose --profile hdfs stop                         # data stays in the hdfs_* volumes
+```
+
+Run Spark jobs that use HDFS in the `app` container: the host cannot resolve the
+`namenode` and `datanode` names, and the image has the Java version Spark needs.
+The cluster has no security and publishes only its web UI, on localhost.
+
+### arXiv lake (Bronze / Silver / Gold)
+
+Put the Kaggle arXiv snapshot at `data/raw/arxiv/arxiv-metadata-oai-snapshot.json`, then:
+
+```powershell
+docker compose --profile app --profile hdfs run --rm app lake
+```
+
+Bronze keeps every raw record, Silver keeps cleaned and de-duplicated `cs.CR` papers
+plus the rejected ids, and Gold holds statistics by year and by related category. The
+report is saved to `data/eval/lake_report.json`; the measured run is in
+[docs/bigdata/lake_report.json](docs/bigdata/lake_report.json).
+
+## Streaming ingestion
+
+New papers flow through Kafka without a manual command:
+
+```text
+crawler (stream-produce) -> Kafka topic papers.raw -> Spark Structured Streaming (stream-consume)
+                                                        |-> raw messages on HDFS (Bronze)
+                                                        |-> bad messages on HDFS (rejected)
+                                                        |-> PostgreSQL: papers, abstract chunks, embeddings
+```
+
+```powershell
+docker compose --profile streaming up -d --build     # Kafka, HDFS, crawler (hourly) and streaming job
+docker compose --profile streaming logs -f stream-consumer   # one JSON line per micro-batch
+docker compose --profile streaming stop              # data stays in the volumes
+```
+
+For a short demonstration, run each side once:
+
+```powershell
+docker compose --profile hdfs --profile streaming up -d kafka namenode datanode1 datanode2
+docker compose --profile app run --rm app stream-produce --sources arxiv --max-records 10
+docker compose --profile app run --rm app stream-consume --once
+```
+
+Streamed papers go to a separate database (`cyberresearch_stream`), so they cannot
+change the corpus the evaluation in Phase 4 measured, and the chatbot does not see them
+yet. Using them in the chatbot means pointing `DATABASE_URL` at that database and
+evaluating again. Only abstracts are embedded here; PDFs stay a job for `process`.
+
+Delivery is at least once: a batch is replayed after a crash, and the deduplicating
+upsert makes the replay harmless. Kafka has one broker, no authentication and no
+published port. This runs on one machine, so it shows the mechanism, not cluster
+scale. Sources publish in daily batches, so batch ingestion would also serve this
+corpus; streaming adds automation rather than fresher answers.
+
 ## Web application (Phase 5)
 
 A thin FastAPI layer (`src/cyberresearch/web/`) over the same `RAGEngine` as the

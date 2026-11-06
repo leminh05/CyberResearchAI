@@ -142,8 +142,20 @@ web:
 spark:
   # local[*] = one JVM using all CPU cores of this machine (NOT a cluster).
   master: "local[*]"
+  # Data lake root. The name "namenode" resolves only inside the Compose network,
+  # so jobs that use HDFS run in the app container (see README).
+  lake_root: "hdfs://namenode:8020/cyberresearch"
+  hdfs_replication: 2
   driver_memory: "2g"
   shuffle_partitions: 8
+
+streaming:
+  # The name "kafka" resolves only inside the Compose network.
+  bootstrap_servers: "kafka:9092"
+  topic: "papers.raw"
+  # Upper limit of one micro-batch, which is collected in the driver to embed it.
+  max_offsets_per_trigger: 200
+  trigger_seconds: 30
 
 logging:
   directory: "logs"

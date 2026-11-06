@@ -116,6 +116,18 @@ class SparkSettings:
     master: str = "local[*]"
     driver_memory: str = "2g"
     shuffle_partitions: int = 8
+    lake_root: str = "hdfs://namenode:8020/cyberresearch"
+    hdfs_replication: int = 2
+
+
+@dataclass(frozen=True)
+class StreamingSettings:
+    """Kafka and Spark Structured Streaming."""
+
+    bootstrap_servers: str = "kafka:9092"
+    topic: str = "papers.raw"
+    max_offsets_per_trigger: int = 200
+    trigger_seconds: int = 30
 
 
 @dataclass(frozen=True)
@@ -148,6 +160,9 @@ class Settings:
     spark: SparkSettings = field(default_factory=SparkSettings)
     rag: RagSettings = field(default_factory=RagSettings)
     web: WebSettings = field(default_factory=WebSettings)
+    streaming: StreamingSettings = field(default_factory=StreamingSettings)
+    # Separate from database_url, so streamed papers cannot change the evaluated corpus.
+    stream_database_url: str | None = None
     # Only whether a key exists; the SDK reads the key itself from the environment.
     anthropic_api_key_present: bool = False
 
@@ -226,6 +241,8 @@ def load_settings(settings_path: Path | None = None, env_file: Path | None = Non
 
     return Settings(
         database_url=_env("DATABASE_URL"),
+        stream_database_url=_env("STREAM_DATABASE_URL"),
+        streaming=StreamingSettings(**(raw.get("streaming") or {})),
         contact_email=_env("CONTACT_EMAIL"),
         openalex_api_key=_env("OPENALEX_API_KEY"),
         semantic_scholar_api_key=s2_key,
