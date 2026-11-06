@@ -96,7 +96,11 @@ class RagSettings:
     max_tokens: int = 16000
     top_k: int = 8
     candidate_k: int = 40
+    exact_vector_search: bool = True
     hnsw_ef_search: int = 200
+    hybrid_search: bool = True
+    lexical_max_doc_fraction: float = 0.10
+    rrf_k: int = 60
     max_chunks_per_paper: int = 3
     min_similarity: float = 0.30
     weak_similarity: float = 0.45

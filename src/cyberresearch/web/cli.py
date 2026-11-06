@@ -21,6 +21,7 @@ def run_web_command(args: argparse.Namespace, settings: Settings) -> int:
     import uvicorn
 
     from cyberresearch.processing.embeddings import SentenceTransformerEmbedder
+    from cyberresearch.processing.store import ChunkStore
     from cyberresearch.rag.retrieval import EmbeddingModelMismatch, Retriever
     from cyberresearch.web.app import Services, create_app
 
@@ -45,6 +46,7 @@ def run_web_command(args: argparse.Namespace, settings: Settings) -> int:
 
     embedder = SentenceTransformerEmbedder(settings.embedding)
     with connect() as conn:
+        ChunkStore(conn, settings.embedding.dimension).init_schema()  # databases older than hybrid search
         try:
             Retriever(conn, embedder, settings.rag).check_embedding_model()
         except EmbeddingModelMismatch as exc:

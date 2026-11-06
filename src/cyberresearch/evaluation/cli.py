@@ -62,9 +62,11 @@ def run_evaluation_command(args: argparse.Namespace, settings: Settings) -> int:
             return 0
 
         from cyberresearch.processing.embeddings import SentenceTransformerEmbedder
+        from cyberresearch.processing.store import ChunkStore
         from cyberresearch.rag.retrieval import Retriever
 
         embedder = SentenceTransformerEmbedder(settings.embedding)
+        ChunkStore(conn, settings.embedding.dimension).init_schema()  # databases older than hybrid search
         retriever = Retriever(conn, embedder, settings.rag)
         retriever.check_embedding_model()
         keys = key_index(conn)
@@ -102,7 +104,8 @@ def run_evaluation_command(args: argparse.Namespace, settings: Settings) -> int:
 def _rag_meta(settings: Settings) -> dict[str, Any]:
     r = settings.rag
     return {"top_k": r.top_k, "candidate_k": r.candidate_k, "max_chunks_per_paper": r.max_chunks_per_paper,
-            "min_similarity": r.min_similarity, "hnsw_ef_search": r.hnsw_ef_search}
+            "min_similarity": r.min_similarity, "hnsw_ef_search": r.hnsw_ef_search, "exact_vector_search": r.exact_vector_search,
+            "hybrid_search": r.hybrid_search, "lexical_max_doc_fraction": r.lexical_max_doc_fraction, "rrf_k": r.rrf_k}
 
 
 def _answers(args: argparse.Namespace, settings: Settings, retriever, questions, keys) -> int:
