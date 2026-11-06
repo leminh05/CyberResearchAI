@@ -13,6 +13,7 @@ Usage (PowerShell, from the project root with .venv activated):
     python main.py ask "How are GNNs used for IDS?"       # one question, then exit
     python main.py rag-eval [--retrieval-only]            # run the test questions
     python main.py evaluate [--part data retrieval performance answers]  # Phase 4 metrics
+    python main.py serve [--provider ollama] [--port 8000]  # web API and chat website
 """
 
 from __future__ import annotations
@@ -30,6 +31,7 @@ from cyberresearch.ingestion.cli import add_ingestion_commands, run_ingestion_co
 from cyberresearch.logging_setup import setup_logging  # noqa: E402
 from cyberresearch.processing.cli import add_processing_commands, run_processing_command  # noqa: E402
 from cyberresearch.rag.cli import RAG_COMMANDS, add_rag_commands, run_rag_command  # noqa: E402
+from cyberresearch.web.cli import add_web_commands, run_web_command  # noqa: E402
 
 PROCESSING_COMMANDS = {"process", "search", "benchmark"}
 
@@ -79,6 +81,7 @@ def main() -> int:
     add_processing_commands(subparsers)
     add_rag_commands(subparsers)
     add_evaluation_commands(subparsers)
+    add_web_commands(subparsers)
     args = parser.parse_args()
 
     if args.command == "check":
@@ -89,6 +92,8 @@ def main() -> int:
         return run_processing_command(args, settings)
     if args.command in RAG_COMMANDS:
         return run_rag_command(args, settings)
+    if args.command == "serve":
+        return run_web_command(args, settings)
     if args.command == "evaluate":
         return run_evaluation_command(args, settings)
     return run_ingestion_command(args, settings)

@@ -31,6 +31,15 @@ class OllamaGenerator:
         self.session = session or requests.Session()
         self.url = settings.ollama_base_url.rstrip("/") + "/api/chat"
 
+    def is_ready(self) -> bool:
+        """True if the server answers and has the configured model."""
+        try:
+            tags = self.session.get(self.settings.ollama_base_url.rstrip("/") + "/api/tags", timeout=2)
+            tags.raise_for_status()
+            return self.settings.ollama_model in {m.get("name") for m in tags.json().get("models", [])}
+        except (requests.RequestException, ValueError):
+            return False
+
     def translate_query(self, question: str) -> str:
         """English search query for a non-English question; original on failure."""
         try:

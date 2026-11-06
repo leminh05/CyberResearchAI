@@ -10,6 +10,7 @@ Big Data-based Cybersecurity Research Assistant with RAG and Verified Citations
 | 2 | PDF processing, chunking, embeddings, pgvector, PySpark + benchmark | Done |
 | 3 | RAG engine with verified citations + terminal chatbot | Done |
 | 4 | System evaluation: data, retrieval, answers, performance | Done (see [docs/evaluation_report.md](docs/evaluation_report.md)) |
+| 5 | Web application: FastAPI backend + React chat with verifiable citations | Done |
 
 ## Setup (Windows PowerShell)
 
@@ -313,7 +314,7 @@ relevant chunks ranked below the top 8.
 
 ```powershell
 python main.py evaluate                                  # data quality, retrieval, performance (~2 min)
-python main.py evaluate --part answers --provider ollama # answer quality, calls the LLM (~1.5 h locally)
+python main.py evaluate --part answers --provider ollama # answer quality, calls the LLM (~45 min locally)
 python main.py evaluate --part retrieval --ids gnn-ids   # one question
 python scripts/build_judgment_pool.py > data/eval/pool.md  # candidates for relevance judging
 ```
@@ -325,13 +326,104 @@ python scripts/build_judgment_pool.py > data/eval/pool.md  # candidates for rele
   methods, numbers and weaknesses in
   [docs/evaluation_report.md](docs/evaluation_report.md).
 
+## Web application (Phase 5)
+
+A thin FastAPI layer (`src/cyberresearch/web/`) over the same `RAGEngine` as the
+terminal chatbot, and a React chat (`frontend/`). Retrieval, generation and
+citation validation are not duplicated: the website only displays what the
+backend validated.
+
+### Run locally
+
+Needs the database running (`docker compose up -d`) and Node.js 20+ for the build.
+
+```powershell
+cd frontend
+npm ci
+npm run build                            # creates frontend/dist, served by FastAPI
+cd ..
+python main.py serve --provider ollama   # or --provider claude with ANTHROPIC_API_KEY in .env
+```
+
+Open http://127.0.0.1:8000. On this laptop an Ollama answer takes 1-3 minutes;
+off-topic questions are declined at once.
+
+**Frontend development** (hot reload): keep `python main.py serve` running, run
+`npm run dev` in `frontend/` and open http://localhost:5173. Vite forwards `/api`
+to the backend, so the API needs no CORS.
+
+### API
+
+| Endpoint | Purpose |
+|---|---|
+| `POST /api/chat` | Body `{"question": "...", "conversation_id": null}`. Returns status, summary, claims with verified citations, references and metadata |
+| `GET /api/health` | Database, model and corpus status. HTTP 503 if the database is down |
+| `DELETE /api/conversations/{id}` | Forget the follow-up context of a conversation |
+| `GET /docs` | Interactive API documentation |
+
+A reference is built from the database row behind the citation, never from model
+output, and each quote was found in the cited chunk by the existing validator.
+Errors have the form `{"error": {"code": "...", "message": "..."}}`:
+
+| HTTP | Code | When |
+|---|---|---|
+| 404 | `conversation_not_found` | Conversation expired, or the server restarted |
+| 409 | `conversation_busy` | That conversation is still answering |
+| 413 | `body_too_large` | Request body over 64 KB |
+| 422 | `invalid_request` | Empty question, over 2,000 characters, or unknown fields |
+| 429 | `rate_limited` | Over the per-client limit; see the `Retry-After` header |
+| 502 | `llm_failed` | The model failed. Details go to the log, not to the client |
+| 503 | `busy`, `database_unavailable` | All answer slots in use, or database unreachable |
+
+Limits are in `web:` in `config/settings.yaml`. An abstention
+(`insufficient_evidence`, `out_of_scope`, `refused`) is a normal HTTP 200 answer.
+
+### Deployment
+
+```powershell
+docker compose --profile web up -d --build   # website on http://127.0.0.1:8000
+docker compose --profile web logs -f web
+docker compose --profile web down
+```
+
+The image builds the website and serves it from FastAPI, so there is one process
+and one origin. `WEB_PROVIDER` and `WEB_PORT` come from `.env`.
+
+**Before exposing it beyond this machine:**
+
+- The API has **no login**, which is why it binds to localhost by default. Anyone
+  who can reach it can spend your Claude API budget. Put a reverse proxy (Caddy,
+  nginx) with HTTPS and authentication in front of it.
+- Configure the proxy to limit body size. Behind a proxy all users share one rate
+  limit, because the limiter sees the proxy's address.
+- Run one server process only. Conversations and limits live in memory, so they
+  reset on restart and are not shared between workers.
+
+Secrets (`ANTHROPIC_API_KEY`, `DATABASE_URL`) are read by the backend only. The
+browser never receives them, and the end-to-end suite checks this for the
+bundle and the health endpoint.
+
+**Known limits:** the model summary is not citation-checked (see the evaluation
+report), so the page labels it; only the numbered findings are verified. A
+cleared or closed page stops waiting, but the server still finishes the model
+call it started. Message history lives in the page and is lost on reload.
+
 ## Tests
 
 ```powershell
 python -m pytest              # offline tests (fake HTTP, temporary PostgreSQL, local Spark)
 python -m pytest -m live -v   # real API calls (network required)
 python -m pytest -m model -v  # real Sentence Transformers model (downloads ~90 MB once)
+
+cd frontend
+npm test                      # React interaction and citation rendering (fake API)
+npm run test:e2e              # browser against the real API, retrieval and validation
 ```
+
+`npm run test:e2e` needs the database with the corpus. It uses the installed Edge
+(`E2E_BROWSER_CHANNEL` selects another, for example `chrome`) and `.venv`'s Python
+(`E2E_PYTHON` overrides it). The LLM is scripted (`tests/e2e_server.py`), so it
+needs no Ollama or API key and costs nothing.
 
 Test PDFs are generated by `tests/pdf_factory.py` at run time (running
 headers, page footers, arXiv stamp, hyphenation, numbered sections), so no
@@ -383,6 +475,11 @@ src/cyberresearch/
     engine.py                 Retrieve -> gate -> generate -> validate
     chat.py                   Terminal chatbot
     evaluation.py             Test-question runner and pass rules
+  web/
+    app.py                    FastAPI routes, errors, security headers
+    schemas.py                Request validation, citation response schema
+    limits.py                 Rate limiter, in-memory conversations
+    cli.py                    `serve` command
   evaluation/
     dataset.py                Golden set loading, stable paper keys
     metrics.py                Precision/recall@K, MRR, key-point coverage
@@ -391,6 +488,7 @@ src/cyberresearch/
     answer_eval.py            Citation validity, unsupported claims, latency
     performance.py            Throughput, embedding and vector-search latency
     cli.py                    `evaluate` command
+frontend/                     React chat (Vite); e2e/ has the browser tests
 config/rag_test_questions.yaml  Test questions (sufficient/weak/outside/ambiguous)
 config/eval/golden_set.yaml   Phase 4 evaluation dataset with relevance judgments
 scripts/build_judgment_pool.py  Candidate pool for relevance judging

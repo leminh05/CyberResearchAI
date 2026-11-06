@@ -3,6 +3,7 @@
 #   docker compose up -d                 # PostgreSQL 16 + pgvector (always)
 #   docker compose run --rm app check    # the application in a container (profile "app")
 #   docker compose run --rm app chat --provider ollama
+#   docker compose --profile web up -d --build   # website on 127.0.0.1:8000
 #
 # Values come from .env (see .env.example). Ollama stays on the Windows host so
 # it can use the GPU; the app container reaches it at host.docker.internal.
@@ -52,6 +53,34 @@ services:
       - hf_cache:/cache/huggingface
     stdin_open: true
     tty: true
+
+  web:
+    build: .
+    image: cyberresearch-app:local
+    profiles: ["web"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: ["serve", "--host", "0.0.0.0", "--provider", "${WEB_PROVIDER:-ollama}"]
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-cyber}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-cyberresearch}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL_DOCKER:-http://host.docker.internal:11434}
+      HF_HOME: /cache/huggingface
+    ports:
+      # Localhost only: the API has no login. See README before exposing it.
+      - "127.0.0.1:${WEB_PORT:-8000}:8000"
+    volumes:
+      - ./logs:/app/logs
+      - hf_cache:/cache/huggingface
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://127.0.0.1:8000/api/health', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      start_period: 120s
+    restart: unless-stopped
 
 volumes:
   pgdata:

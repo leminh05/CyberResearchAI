@@ -1,4 +1,13 @@
-# CyberResearchAI application image (CLI: ingestion, processing, RAG chatbot).
+# CyberResearchAI application image (CLI: ingestion, processing, RAG chatbot; website).
+
+# Build the React website; only its static files go into the final image.
+FROM node:22-slim AS frontend
+WORKDIR /frontend
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm ci
+COPY frontend/ ./
+RUN npm run build
+
 # Pinned to Debian 12 (bookworm): Debian 13 no longer ships OpenJDK 17, the
 # Java version PySpark 3.5 officially supports.
 FROM python:3.11-slim-bookworm
@@ -19,6 +28,7 @@ RUN pip install --no-cache-dir torch --index-url https://download.pytorch.org/wh
 COPY config ./config
 COPY src ./src
 COPY main.py ./
+COPY --from=frontend /frontend/dist ./frontend/dist
 
 # Run as a non-root user.
 RUN useradd --create-home appuser && mkdir -p /app/data /app/logs /cache/huggingface \
