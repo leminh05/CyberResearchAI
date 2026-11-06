@@ -67,6 +67,10 @@ class ClaudeClient:
         self.settings = settings
         self.client = client or anthropic.Anthropic(max_retries=3)
 
+    def is_ready(self) -> bool:
+        """The key was checked at startup; a real probe would be a billed call."""
+        return True
+
     def translate_query(self, question: str) -> str:
         """English search query for a non-English question (the embedding model is English-only).
 

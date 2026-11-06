@@ -42,6 +42,11 @@ logs/
 .DS_Store
 Thumbs.db
 
+# Frontend
+frontend/node_modules/
+frontend/test-results/
+frontend/playwright-report/
+
 # Build
 dist/
 build/

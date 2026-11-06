@@ -2,6 +2,8 @@
 
 # Testing
 pytest>=8.0
+# FastAPI TestClient
+httpx>=0.27
 
 # Embedded PostgreSQL 16 + pgvector for local development and tests
 # (used only when DATABASE_URL is not set; see README).

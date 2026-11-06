@@ -115,6 +115,16 @@ class SparkSettings:
 
 
 @dataclass(frozen=True)
+class WebSettings:
+    """Limits of the web API (Phase 5)."""
+
+    rate_limit_per_minute: int = 10
+    max_concurrent_requests: int = 2
+    max_conversations: int = 1000
+    conversation_ttl_minutes: int = 60
+
+
+@dataclass(frozen=True)
 class Settings:
     """All application settings."""
 
@@ -133,6 +143,7 @@ class Settings:
     embedding: EmbeddingSettings = field(default_factory=EmbeddingSettings)
     spark: SparkSettings = field(default_factory=SparkSettings)
     rag: RagSettings = field(default_factory=RagSettings)
+    web: WebSettings = field(default_factory=WebSettings)
     # Only whether a key exists; the SDK reads the key itself from the environment.
     anthropic_api_key_present: bool = False
 
@@ -225,5 +236,6 @@ def load_settings(settings_path: Path | None = None, env_file: Path | None = Non
         embedding=EmbeddingSettings(**(raw.get("embedding") or {})),
         spark=SparkSettings(**(raw.get("spark") or {})),
         rag=_rag_settings(raw.get("rag") or {}),
+        web=WebSettings(**(raw.get("web") or {})),
         anthropic_api_key_present=bool(_env("ANTHROPIC_API_KEY") or _env("ANTHROPIC_AUTH_TOKEN")),
     )

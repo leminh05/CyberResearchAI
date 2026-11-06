@@ -18,3 +18,7 @@ pyspark>=3.5.9,<3.6
 
 # Phase 3: RAG engine (official Anthropic SDK for the Claude API)
 anthropic>=2.3,<3
+
+# Phase 5: web API (the React frontend lives in frontend/)
+fastapi>=0.115,<1
+uvicorn>=0.30,<1

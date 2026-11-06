@@ -120,6 +120,16 @@ rag:
   # A citation quote must contain at least this many words.
   min_quote_words: 5
 
+web:
+  # Chat questions per minute from one client address.
+  rate_limit_per_minute: 10
+  # Questions answered at the same time; further ones get "busy" (HTTP 503)
+  # instead of queueing behind a slow local model.
+  max_concurrent_requests: 2
+  # Follow-up context is kept in memory, dropped when idle or when full.
+  max_conversations: 1000
+  conversation_ttl_minutes: 60
+
 spark:
   # local[*] = one JVM using all CPU cores of this machine (NOT a cluster).
   master: "local[*]"
