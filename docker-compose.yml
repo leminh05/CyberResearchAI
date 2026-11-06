@@ -4,11 +4,28 @@
 #   docker compose run --rm app check    # the application in a container (profile "app")
 #   docker compose run --rm app chat --provider ollama
 #   docker compose --profile web up -d --build   # website on 127.0.0.1:8000
+#   docker compose --profile hdfs up -d          # HDFS: NameNode + 2 DataNodes
+#   docker compose --profile streaming up -d --build   # Kafka, HDFS, crawler and Spark streaming job
 #
 # Values come from .env (see .env.example). Ollama stays on the Windows host so
 # it can use the GPU; the app container reaches it at host.docker.internal.
 
 name: cyberresearch
+
+x-stream-app: &stream-app
+  build: .
+  image: cyberresearch-app:local
+  env_file:
+    - path: .env
+      required: false
+  environment:
+    # A separate database, so streamed papers cannot change the evaluated corpus.
+    STREAM_DATABASE_URL: postgresql://${POSTGRES_USER:-cyber}:${POSTGRES_PASSWORD}@postgres:5432/${STREAM_DB:-cyberresearch_stream}
+    HF_HOME: /cache/huggingface
+  volumes:
+    - ./logs:/app/logs
+    - hf_cache:/cache/huggingface
+  restart: unless-stopped
 
 services:
   postgres:
@@ -46,6 +63,7 @@ services:
       # Inside the Compose network the database host is the service name.
       DATABASE_URL: postgresql://${POSTGRES_USER:-cyber}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-cyberresearch}
       OLLAMA_BASE_URL: ${OLLAMA_BASE_URL_DOCKER:-http://host.docker.internal:11434}
+      STREAM_DATABASE_URL: postgresql://${POSTGRES_USER:-cyber}:${POSTGRES_PASSWORD}@postgres:5432/${STREAM_DB:-cyberresearch_stream}
       HF_HOME: /cache/huggingface
     volumes:
       - ./data:/app/data
@@ -82,6 +100,106 @@ services:
       start_period: 120s
     restart: unless-stopped
 
+  kafka:
+    image: apache/kafka:3.9.1
+    profiles: ["streaming"]
+    hostname: kafka
+    # One broker, no authentication and no published port: reachable only inside the Compose network.
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_NUM_PARTITIONS: 3
+      KAFKA_LOG_DIRS: /var/lib/kafka/data
+      KAFKA_HEAP_OPTS: -Xmx512m -Xms256m
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 > /dev/null 2>&1"]
+      interval: 10s
+      timeout: 20s
+      retries: 12
+    restart: unless-stopped
+
+  stream-producer:
+    <<: *stream-app
+    profiles: ["streaming"]
+    # Sources publish in daily batches, so one round per hour is enough.
+    command: ["stream-produce", "--interval", "3600"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+
+  stream-consumer:
+    <<: *stream-app
+    profiles: ["streaming"]
+    command: ["stream-consume"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      namenode:
+        condition: service_started
+      datanode1:
+        condition: service_started
+      datanode2:
+        condition: service_started
+
+  namenode:
+    image: apache/hadoop:3.4.1
+    profiles: ["hdfs", "streaming"]
+    hostname: namenode
+    # Root so the service can write to its named volume; the cluster is not exposed.
+    user: root
+    command: ["hdfs", "namenode"]
+    env_file: docker/hadoop/hadoop.env
+    environment:
+      ENSURE_NAMENODE_DIR: /data/name
+    ports:
+      # Web UI, localhost only.
+      - "127.0.0.1:9870:9870"
+    volumes:
+      - hdfs_name:/data
+    restart: unless-stopped
+
+  datanode1:
+    image: apache/hadoop:3.4.1
+    profiles: ["hdfs", "streaming"]
+    hostname: datanode1
+    user: root
+    command: ["hdfs", "datanode"]
+    env_file: docker/hadoop/hadoop.env
+    depends_on: [namenode]
+    volumes:
+      - hdfs_data1:/data
+    restart: unless-stopped
+
+  datanode2:
+    image: apache/hadoop:3.4.1
+    profiles: ["hdfs", "streaming"]
+    hostname: datanode2
+    user: root
+    command: ["hdfs", "datanode"]
+    env_file: docker/hadoop/hadoop.env
+    depends_on: [namenode]
+    volumes:
+      - hdfs_data2:/data
+    restart: unless-stopped
+
 volumes:
   pgdata:
   hf_cache:
+  kafka_data:
+  hdfs_name:
+  hdfs_data1:
+  hdfs_data2:

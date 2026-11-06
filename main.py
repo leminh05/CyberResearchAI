@@ -9,6 +9,10 @@ Usage (PowerShell, from the project root with .venv activated):
     python main.py process [--limit 20] [--no-download]   # PDFs -> chunks -> embeddings
     python main.py search "intrusion detection with GNN"  # semantic search over chunks
     python main.py benchmark [--sizes 1000 10000]         # plain Python vs PySpark
+    python main.py hdfs-check                             # Spark round trip on HDFS (in the app container)
+    python main.py lake                                   # arXiv Bronze/Silver/Gold on HDFS (in the app container)
+    python main.py stream-produce                         # crawl new papers into Kafka (in the app container)
+    python main.py stream-consume                         # Kafka to Spark to PostgreSQL (in the app container)
     python main.py chat                                   # terminal research chatbot (Claude)
     python main.py ask "How are GNNs used for IDS?"       # one question, then exit
     python main.py rag-eval [--retrieval-only]            # run the test questions
@@ -33,7 +37,7 @@ from cyberresearch.processing.cli import add_processing_commands, run_processing
 from cyberresearch.rag.cli import RAG_COMMANDS, add_rag_commands, run_rag_command  # noqa: E402
 from cyberresearch.web.cli import add_web_commands, run_web_command  # noqa: E402
 
-PROCESSING_COMMANDS = {"process", "search", "benchmark"}
+PROCESSING_COMMANDS = {"process", "search", "benchmark", "hdfs-check", "lake", "stream-produce", "stream-consume"}
 
 
 def _java_version() -> str | None:

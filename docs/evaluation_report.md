@@ -298,9 +298,14 @@ which is what the LLM reads. MRR per question: `federated-ids` 0.167 -> 1.0,
 
 - **Better:** `federated-ids` and `vi-federated-ids` now answer from relevant papers
   (the first abstained, the second cited a management book).
-- **Worse:** `prompt-injection` went from answered to `insufficient_evidence` although
-  its retrieval improved, and `concept-drift` from answered to `partial`. `edge-ids`,
-  `lm-threat-hunting` and `payment-fraud` lost completeness.
+- **Worse:** `prompt-injection` went from answered to `insufficient_evidence` in this
+  run, and `concept-drift` from answered to `partial`. `edge-ids`, `lm-threat-hunting`
+  and `payment-fraud` lost completeness.
+- **Model noise, measured.** The `prompt-injection` abstention did not reproduce: five
+  more runs with the same 3,017-token prompt all gave `answered` with verified
+  citations. So the local model can give a different answer to an identical prompt
+  despite temperature 0, and one run per question cannot separate small differences
+  from noise. How often this happens across the other questions was not measured.
 - **LLM time is not comparable.** Output length is unchanged (426 vs 430 tokens). The
   cause of the slower run was not investigated; other load on the machine during the
   run was not ruled out.
@@ -310,3 +315,51 @@ same 29 questions they are reported on, so the gain may be optimistic. Labels ar
 silver and from a pool built with dense and full-text search. Ordering changes also
 change which excerpts the local model sees, so single-question changes in answers
 include model noise and should not be read as caused by one fix.
+
+## 10. Big Data pipeline (measured 2026-11-07)
+
+Everything below ran on one machine, in Docker: one NameNode and two DataNodes with
+replication 2, one Kafka broker, and Spark in `local[*]` mode. It shows the mechanisms
+on real data, not cluster speed or protection against a machine failing.
+
+**Data lake on HDFS** from the Kaggle arXiv snapshot (5.67 GB of JSON,
+[raw report](bigdata/lake_report.json)):
+
+| Layer | Records | Stored | Seconds |
+|---|---:|---:|---:|
+| Bronze (all raw records) | 3,233,620 (0 corrupt) | 2,732 MB (5,464 MB with replicas) | 83.3 |
+| Silver (`cs.CR`, cleaned) | 53,943 | 52.8 MB | 31.6 |
+| Gold (statistics) | - | under 0.1 MB | 8.5 |
+
+Silver rejected 7 withdrawn papers and 26 duplicate titles. The 53,976 records with
+`cs.CR` equal an independent line count of the raw file. The de-duplication matches
+exact normalized titles only, so differently worded re-posts remain.
+
+**Python vs Spark** on the same task, raw JSON to the Silver result: plain Python took
+249.2 s and Spark 88.5 s, about 2.8 times faster, with identical counts. This is one
+run each. Spark ran first, so Python may have benefited from the file being cached,
+and the gain comes from using several CPU cores, not from several machines.
+
+**A stall found and fixed.** The first full run hung for about three hours with no
+tasks running, in a stage that mixed shuffle and HDFS tasks. With the default
+`spark.locality.wait` the same write was still stuck when stopped after 240 s; with 0
+it finished in 16.7 s. The likely cause is that local mode does not offer delayed
+tasks again. The Spark source was not read to confirm this.
+
+**Streaming** (crawler, Kafka, Spark Structured Streaming, PostgreSQL), live with arXiv
+and OpenAlex into a separate database:
+
+- A micro-batch started at most 17.2 s after its oldest message was sent while the
+  consumer was waiting (trigger every 30 s). This is one small batch of 14 messages,
+  and it does not include embedding.
+- One malformed message was set aside on HDFS with its reason; the stream continued.
+- Hard kill (`docker kill`) in the middle of a batch: 162 papers were stored, none of
+  them newly embedded. After a restart the batch was replayed: all 269 messages were
+  handled, ending with 250 sources from 250 distinct ids, no duplicate chunks and no
+  paper with an abstract missing its chunks.
+- Replaying the whole topic of 18 messages from the start after deleting the
+  checkpoint changed no counts in the database.
+- The evaluated corpus stayed at 377 papers throughout.
+
+Not measured: throughput under sustained load, or a Kafka broker failure. The numbers
+in sections 2-9 do not include streamed papers.
