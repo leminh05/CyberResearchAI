@@ -103,10 +103,19 @@ rag:
   # max_chunks_per_paper per paper (diversity), then the best top_k.
   top_k: 8
   candidate_k: 40
-  # HNSW search breadth. The default (40) let SQL filters drop the best chunk
-  # (measured: 0.379 vs exact 0.414 for one question); 200 matches exact search
-  # on this corpus at negligible cost.
+  # Exact scan instead of the HNSW index: about 19 ms with recall 1.0 on this
+  # corpus. The index takes 2 ms but loses chunks (ef_search 100: recall@40 0.946,
+  # MRR 0.858 -> 0.824). Set false only when a much larger corpus makes the exact
+  # scan too slow; hnsw_ef_search applies only then.
+  exact_vector_search: true
   hnsw_ef_search: 200
+  # Hybrid search: merge the cosine ranking with a full-text search for chunks
+  # containing all rare terms of the question (terms in more than
+  # lexical_max_doc_fraction of the chunks are ignored). Chosen on the golden
+  # set, see docs/evaluation_report.md. rrf_k is the usual fusion constant.
+  hybrid_search: true
+  lexical_max_doc_fraction: 0.10
+  rrf_k: 60
   max_chunks_per_paper: 3
   # Cosine-similarity gates (calibrated on the test questions, see README):
   # below min_similarity nothing is sent to Claude ("insufficient evidence");

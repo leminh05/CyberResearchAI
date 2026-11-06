@@ -16,7 +16,7 @@ from cyberresearch.rag.engine import RAGEngine
 from cyberresearch.rag.evaluation import judge
 from cyberresearch.rag.llm import FALLBACK_BETA, ClaudeClient, LLMError, LLMResult
 from cyberresearch.rag.prompts import ANSWER_SCHEMA
-from cyberresearch.rag.retrieval import EmbeddingModelMismatch, Retriever, SearchFilters, select_diverse
+from cyberresearch.rag.retrieval import EmbeddingModelMismatch, Retriever, SearchFilters, fuse_rankings, select_diverse
 from fakes import HashEmbedder
 
 SETTINGS = RagSettings(top_k=4, candidate_k=20, max_chunks_per_paper=2, min_similarity=0.2, weak_similarity=0.4)
@@ -58,6 +58,55 @@ def corpus(store):
 @pytest.fixture
 def retriever(store, corpus):
     return Retriever(store.conn, HashEmbedder(), SETTINGS)
+
+
+class AlwaysIdsEmbedder(HashEmbedder):
+    """Cosine search always prefers the intrusion papers, whatever the question."""
+
+    def embed(self, texts):
+        return super().embed([IDS_TEXT for _ in texts])
+
+
+def hybrid_retriever(store, **settings):
+    values = dict(top_k=4, candidate_k=2, max_chunks_per_paper=2, min_similarity=0.2)
+    return Retriever(store.conn, AlwaysIdsEmbedder(), RagSettings(**{**values, **settings}))
+
+
+def test_exact_search_setting_does_not_leak_out_of_the_query(store, corpus) -> None:
+    assert hybrid_retriever(store).retrieve("sourdough")
+    assert store.conn.execute("SHOW enable_indexscan").fetchone()["enable_indexscan"] == "on"
+
+
+def test_fuse_rankings_rewards_chunks_in_both_lists() -> None:
+    a, b, c = {"chunk_id": 1}, {"chunk_id": 2}, {"chunk_id": 3}
+    assert fuse_rankings([[a, b], [c, b]], 60) == [b, a, c]
+
+
+def test_hybrid_search_finds_exact_term_missed_by_cosine(store, corpus) -> None:
+    titles = {e.title for e in hybrid_retriever(store).retrieve("sourdough")}
+    assert "Baking Bread" in titles
+    assert "Baking Bread" not in {e.title for e in hybrid_retriever(store, hybrid_search=False).retrieve("sourdough")}
+
+
+def test_hybrid_evidence_keeps_cosine_similarity(store, corpus) -> None:
+    bread = next(e for e in hybrid_retriever(store).retrieve("sourdough") if e.title == "Baking Bread")
+    assert bread.similarity < 0.5
+
+
+def test_hybrid_ignores_frequent_terms(store, corpus) -> None:
+    # "network" is in most chunks and in no chunk together with "sourdough".
+    retriever = hybrid_retriever(store, lexical_max_doc_fraction=0.2)
+    assert "Baking Bread" in {e.title for e in retriever.retrieve("network sourdough")}
+
+
+def test_hybrid_applies_metadata_filters(store, corpus) -> None:
+    evidence = hybrid_retriever(store).retrieve("sourdough", SearchFilters(year_min=2024))
+    assert "Baking Bread" not in {e.title for e in evidence}
+
+
+@pytest.mark.parametrize("question", ["O'Reilly back\\slash & | ! :* <-> ()", "the of and", "?!", ""])
+def test_hybrid_accepts_any_question_text(store, corpus, question) -> None:
+    assert hybrid_retriever(store).retrieve(question)
 
 
 class FakeGenerator:

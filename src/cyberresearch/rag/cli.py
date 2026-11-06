@@ -47,6 +47,7 @@ def _filters(args: argparse.Namespace):
 
 def run_rag_command(args: argparse.Namespace, settings: Settings) -> int:
     from cyberresearch.processing.embeddings import SentenceTransformerEmbedder
+    from cyberresearch.processing.store import ChunkStore
     from cyberresearch.rag.retrieval import EmbeddingModelMismatch, Retriever
 
     # Windows consoles default to a legacy code page; answers may be Vietnamese.
@@ -55,6 +56,7 @@ def run_rag_command(args: argparse.Namespace, settings: Settings) -> int:
 
     store = PostgresStore.connect(resolve_database_url(settings))
     try:
+        ChunkStore(store.conn, settings.embedding.dimension).init_schema()  # databases older than hybrid search
         retriever = Retriever(store.conn, SentenceTransformerEmbedder(settings.embedding), settings.rag)
         try:
             retriever.check_embedding_model()

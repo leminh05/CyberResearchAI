@@ -1,11 +1,18 @@
-"""Semantic retrieval of evidence chunks with metadata filters.
+"""Hybrid retrieval of evidence chunks with metadata filters.
 
 Steps:
   1. Embed the question with the SAME model used for the chunks (checked).
   2. pgvector cosine search over ``paper_chunks`` with SQL metadata filters,
      fetching ``candidate_k`` candidates.
-  3. Diversity selection: at most ``max_chunks_per_paper`` chunks per paper,
+  3. Full-text search for chunks containing all rare terms of the question,
+     merged with step 2 by reciprocal rank fusion. Exact terms ("federated")
+     recover papers that a generic long document outranks by cosine alone.
+  4. Diversity selection: at most ``max_chunks_per_paper`` chunks per paper,
      then the best ``top_k``. Without it, one long paper can fill every slot.
+
+``Evidence.similarity`` stays the cosine similarity for every chunk. Fusion can
+only make the relevance gate of the engine stricter: the per-paper cap may drop
+the top cosine chunk in favour of a full-text hit, never add a closer one.
 
 No cross-encoder reranker is used: on this corpus the bi-encoder ranking plus
 the per-paper cap already returns on-topic chunks for the test questions, and a
@@ -22,6 +29,10 @@ import psycopg
 from cyberresearch.config import RagSettings
 from cyberresearch.processing.embeddings import Embedder
 from cyberresearch.processing.store import to_vector_literal
+
+
+# shortcut: a long question only uses its first terms, enough for real questions.
+MAX_LEXICAL_TERMS = 32
 
 
 class EmbeddingModelMismatch(Exception):
@@ -107,6 +118,17 @@ def select_diverse(rows: list[dict[str, Any]], top_k: int, max_per_paper: int) -
     return selected
 
 
+def fuse_rankings(rankings: list[list[dict[str, Any]]], k: int) -> list[dict[str, Any]]:
+    """Reciprocal rank fusion: rank positions only, as cosine and text scores are not comparable."""
+    scores: dict[int, float] = {}
+    rows: dict[int, dict[str, Any]] = {}
+    for ranking in rankings:
+        for rank, row in enumerate(ranking, start=1):
+            scores[row["chunk_id"]] = scores.get(row["chunk_id"], 0.0) + 1 / (k + rank)
+            rows[row["chunk_id"]] = row
+    return [rows[chunk_id] for chunk_id in sorted(scores, key=scores.__getitem__, reverse=True)]
+
+
 class Retriever:
     """Embeds questions and searches the chunk table."""
 
@@ -129,6 +151,27 @@ class Retriever:
             raise EmbeddingModelMismatch(
                 f"chunks use {sorted(models)}, query embedder is {self.embedder.model_name!r}"
             )
+
+    def _lexical_query(self, query: str) -> str | None:
+        """tsquery requiring every rare term of ``query``; None if it has no searchable term.
+
+        PostgreSQL's text rank ignores how rare a term is, so frequent terms
+        ("detection" in a security corpus) would only add noise.
+        """
+        lexemes = [
+            r["lexeme"]
+            for r in self.conn.execute("SELECT unnest(tsvector_to_array(to_tsvector('english', %s))) AS lexeme", (query,))
+        ][:MAX_LEXICAL_TERMS]
+        if not lexemes:
+            return None
+        terms = ["'" + w.replace("\\", "\\\\").replace("'", "''") + "'" for w in lexemes]
+        total = self.conn.execute("SELECT count(*) AS n FROM paper_chunks").fetchone()["n"]
+        rare = [
+            term for term in terms
+            if self.conn.execute("SELECT count(*) AS n FROM paper_chunks WHERE text_search @@ %s::tsquery", (term,)).fetchone()["n"]
+            <= self.settings.lexical_max_doc_fraction * total
+        ]
+        return " & ".join(rare or terms)
 
     def retrieve(self, query: str, filters: SearchFilters | None = None, top_k: int | None = None) -> list[Evidence]:
         """Return up to ``top_k`` evidence chunks, most similar first."""
@@ -159,17 +202,32 @@ class Retriever:
             conditions.append("c.paper_id = ANY(%(paper_ids)s)")
             params["paper_ids"] = filters.paper_ids
 
-        rows = self.conn.execute(
-            f"""SELECT c.chunk_id, c.paper_id, c.chunk_index, c.content_source, c.section,
-                       c.page_start, c.page_end, c.text, c.source_url,
-                       p.title, p.authors, p.year, p.doi, p.arxiv_id, p.url AS paper_url,
-                       1 - (c.embedding <=> %(vec)s::vector) AS similarity
-                FROM paper_chunks c JOIN papers p USING (paper_id)
-                WHERE {' AND '.join(conditions)}
-                ORDER BY c.embedding <=> %(vec)s::vector
-                LIMIT %(limit)s""",
-            params,
-        ).fetchall()
+        def search(where: str, order: str) -> list[dict[str, Any]]:
+            return self.conn.execute(
+                f"""SELECT c.chunk_id, c.paper_id, c.chunk_index, c.content_source, c.section,
+                           c.page_start, c.page_end, c.text, c.source_url,
+                           p.title, p.authors, p.year, p.doi, p.arxiv_id, p.url AS paper_url,
+                           1 - (c.embedding <=> %(vec)s::vector) AS similarity
+                    FROM paper_chunks c JOIN papers p USING (paper_id)
+                    WHERE {where}
+                    ORDER BY {order}
+                    LIMIT %(limit)s""",
+                params,
+            ).fetchall()
+
+        where = " AND ".join(conditions)
+        with self.conn.transaction():
+            # Left to itself the planner flips between index and exact scan as table statistics change.
+            if self.settings.exact_vector_search:
+                self.conn.execute("SET LOCAL enable_indexscan = off")
+            rows = search(where, "c.embedding <=> %(vec)s::vector")
+        params["lexical"] = self._lexical_query(query) if self.settings.hybrid_search else None
+        if params["lexical"]:
+            lexical = search(
+                f"{where} AND c.text_search @@ %(lexical)s::tsquery",
+                "ts_rank(c.text_search, %(lexical)s::tsquery) DESC, c.chunk_id",
+            )
+            rows = fuse_rankings([rows, lexical], self.settings.rrf_k)
 
         selected = select_diverse(rows, top_k or self.settings.top_k, self.settings.max_chunks_per_paper)
         return [

@@ -223,9 +223,9 @@ Ordered by impact. Effort is an _estimate_ (S = hours, M = a day or more).
 
 | # | Weakness (evidence) | Proposed fix | Effort |
 |---|---|---|---|
-| 1 | **Answer summary is not validated** (`concept-drift` summary repeats rejected citations and shows raw "E3" markers; `vehicle-security` shows a summary under `insufficient_evidence`) | Show a summary only when every claim was verified, or rebuild it from verified claims; strip bare `E\d+` mentions; hide the summary for abstentions | S |
-| 2 | **HNSW index never used** (planner picks a sequential scan at ef_search=200; HNSW 2.3 ms vs exact 19.8 ms, recall@40 0.984) | Run the nearest-neighbour search on `paper_chunks` alone in a subquery (index scan), apply filters with pgvector 0.8 `hnsw.iterative_scan = relaxed_order`, then join `papers`; lower ef_search to ~100; keep `evaluate --part performance` as the regression check. At 7.7k chunks exact search is still fast; at 1M chunks a linear scan would take roughly 2.6 s (_estimate_: 19.8 ms x 130) | M |
-| 3 | **Generic "hub" documents win retrieval** (`federated-ids` MRR 0.17, `ids-datasets` 0.14; a 500-page management book is the top hit; context precision only 52%) | Hybrid ranking: add the PostgreSQL full-text rank to the cosine score (the FTS ranker found the relevant papers); cap chunks per long book; measure a cross-encoder reranker with `evaluate --part retrieval` | M |
+| 1 | **Fixed, see section 9.** **Answer summary is not validated** (`concept-drift` summary repeats rejected citations and shows raw "E3" markers; `vehicle-security` shows a summary under `insufficient_evidence`) | Show a summary only when every claim was verified, or rebuild it from verified claims; strip bare `E\d+` mentions; hide the summary for abstentions | S |
+| 2 | **HNSW index not used** (planner picks a sequential scan at ef_search=200; HNSW 2.3 ms vs exact 19.8 ms, recall@40 0.984) | **Tried, measured and rejected for this corpus (2026-11-06):** ef_search=100 makes the planner use the index (retrieval query 39 ms -> 5 ms) but recall@40 falls to 0.946 and MRR from 0.858 to 0.824, because `insider-threat` loses its best chunk. `hnsw.iterative_scan` did not change recall, and rebuilding with m=32, ef_construction=400 only reached 0.981 at ef_search=100. The exact scan is kept and now set explicitly (`rag.exact_vector_search`), because the planner's choice flipped to the index after a schema change: 19 ms is negligible beside a 73 s answer. Turn it off only when the corpus is large enough to need it; at 1M chunks a linear scan would take roughly 2.6 s (_estimate_: 19.8 ms x 130) | - |
+| 3 | **Improved, see section 9.** **Generic "hub" documents win retrieval** (`federated-ids` MRR 0.17, `ids-datasets` 0.14; a 500-page management book is the top hit; context precision only 52%) | Hybrid ranking: add the PostgreSQL full-text rank to the cosine score (the FTS ranker found the relevant papers); cap chunks per long book; measure a cross-encoder reranker with `evaluate --part retrieval` | M |
 | 4 | **Corpus off-topic and narrow** (25.5% without any security term; 4 days of 2026 only; Ukrainian finance papers) | Tighten the OpenAlex query (require a security keyword in title/abstract, `language:en`), then run `backfill --start 2023-01-01` | S + run time |
 | 5 | **Missing text** (48 papers = 12.7% with no PDF and no abstract; 15 of 101 judged-relevant papers are therefore unsearchable) | Fill abstracts from OpenAlex `abstract_inverted_index` / Semantic Scholar when another source has one | S |
 | 6 | **Citation-valid but irrelevant or wrong claims** (Vietnamese answer cites a management book for an IDS claim) | Per-claim faithfulness check: LLM judge (Claude when a key exists) or an NLI model on (quote, claim); add human review of `answers.json` to the protocol | M |
@@ -248,3 +248,65 @@ Ordered by impact. Effort is an _estimate_ (S = hours, M = a day or more).
 - Scale: 7,691 chunks fit in memory; latency at 1M chunks is an _estimate_
   only (section 7), not a measurement.
 - Relevance labels are silver (assistant-judged, pooled); see section 2.
+
+## 9. Quality fixes after the evaluation (measured 2026-11-07)
+
+Sections 3-6 report the system as first evaluated; those results are kept in
+`docs/evaluation/before_quality_fixes/`. The JSON files directly in
+`docs/evaluation/` are now from the fixed system.
+
+**Fixes:** (1) a summary is removed when any citation of the answer was rejected
+or it contains raw evidence ids, and when nothing could be verified neither summary
+nor interpretation is shown; raw ids in claims become reference numbers.
+(2) Hybrid retrieval: the cosine ranking is merged by reciprocal rank fusion with a
+full-text search over a stored `tsvector` column. (3) The vector search is set to
+an exact scan explicitly (row 2 of section 7).
+
+**Choosing the hybrid variant** (retrieval metrics, 29 English questions, `rrf_k`
+60; "rare" = in at most 10% or 5% of the chunks):
+
+| Full-text list | MRR | P@1 | P@5 | R@5 | R@10 | Evidence coverage | Context precision | Context paper recall |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| None (before) | 0.858 | 0.793 | 0.352 | 0.756 | 0.821 | 0.931 | 0.522 | 0.752 |
+| Any question term | 0.864 | 0.793 | 0.338 | 0.734 | 0.806 | 0.966 | 0.418 | 0.734 |
+| Any rare term (10%) | 0.878 | 0.828 | 0.331 | 0.712 | 0.841 | 1.000 | 0.397 | 0.722 |
+| Any rare term (5%) | 0.926 | 0.897 | 0.338 | 0.736 | 0.847 | 1.000 | 0.422 | 0.764 |
+| **All rare terms (10%), chosen** | **0.908** | **0.862** | **0.379** | **0.789** | **0.833** | **1.000** | **0.534** | **0.789** |
+| Title + abstract, papers | 0.852 | 0.759 | 0.345 | 0.728 | 0.854 | 1.000 | 0.392 | 0.810 |
+| Chunks + title and abstract | 0.925 | 0.862 | 0.359 | 0.741 | 0.832 | 1.000 | 0.418 | 0.774 |
+
+The chosen variant is the only one better than the baseline on all these metrics.
+The 5% variant has a higher MRR but fills the context with more irrelevant chunks,
+which is what the LLM reads. MRR per question: `federated-ids` 0.167 -> 1.0,
+`prompt-injection` 0.5 -> 1.0, `ids-datasets` 0.143 -> 0.333, `edge-ids`
+0.333 -> 0.25 (worse).
+
+**Answer quality** (same 40 questions and model):
+
+| Metric | Before | After |
+|---|---:|---:|
+| Citation validity rate | 87.2% (82/94) | 87.8% (79/90) |
+| Unsupported claim rate (model) | 9.7% (7/72) | 9.6% (7/73) |
+| Unsupported claims shown to the user | 0 | 0 |
+| Evidence relevance | 0.747 | 0.762 |
+| Answer completeness (lexical proxy) | 0.525 | 0.606 |
+| Answer rate, answerable questions | 93.3% (19 answered, 9 partial) | 96.7% (19 answered, 10 partial) |
+| Correct abstention, unanswerable | 100% (10/10) | 100% (10/10) |
+| Answers showing raw evidence ids | present (`concept-drift`) | 0 |
+| Retrieval + validation time | 0.074 s | 0.092 s |
+| LLM generation time (mean) | 73.3 s | 104.6 s |
+
+- **Better:** `federated-ids` and `vi-federated-ids` now answer from relevant papers
+  (the first abstained, the second cited a management book).
+- **Worse:** `prompt-injection` went from answered to `insufficient_evidence` although
+  its retrieval improved, and `concept-drift` from answered to `partial`. `edge-ids`,
+  `lm-threat-hunting` and `payment-fraud` lost completeness.
+- **LLM time is not comparable.** Output length is unchanged (426 vs 430 tokens). The
+  cause of the slower run was not investigated; other load on the machine during the
+  run was not ruled out.
+
+**Limits of these numbers.** The hybrid variant and its thresholds were chosen on the
+same 29 questions they are reported on, so the gain may be optimistic. Labels are
+silver and from a pool built with dense and full-text search. Ordering changes also
+change which excerpts the local model sees, so single-question changes in answers
+include model noise and should not be read as caused by one fix.
