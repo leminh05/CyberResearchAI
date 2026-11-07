@@ -85,10 +85,7 @@ class EmbeddingSettings:
 class RagSettings:
     """Retrieval and answer-generation settings (Phase 3)."""
 
-    provider: str = "claude"  # claude | ollama | groq
-    groq_model: str = "openai/gpt-oss-120b"
-    groq_max_tokens: int = 4096
-    groq_timeout_seconds: float = 120.0
+    provider: str = "claude"  # claude | ollama
     ollama_base_url: str = "http://127.0.0.1:11434"
     ollama_model: str = "qwen2.5:7b"
     ollama_num_ctx: int = 12288
@@ -174,10 +171,8 @@ def _rag_settings(raw: dict[str, Any]) -> RagSettings:
     values = dict(raw)
     for key, value in (values.pop("ollama", None) or {}).items():
         values[f"ollama_{key}"] = value
-    for key, value in (values.pop("groq", None) or {}).items():
-        values[f"groq_{key}"] = value
-    if values.get("provider", "claude") not in ("claude", "ollama", "groq"):
-        raise ValueError("rag.provider must be 'claude', 'ollama' or 'groq'")
+    if values.get("provider", "claude") not in ("claude", "ollama"):
+        raise ValueError("rag.provider must be 'claude' or 'ollama'")
     if "exclude_sections" in values:
         values["exclude_sections"] = tuple(values["exclude_sections"])
     # Inside Docker, Ollama runs on the host (host.docker.internal), not localhost.
