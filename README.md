@@ -1,5 +1,48 @@
+<div align="center">
+
 # CyberResearchAI
-Big Data-based Cybersecurity Research Assistant with RAG and Verified Citations
+
+**Ask questions about cybersecurity research and get answers that cite the papers, with every quote checked against the source text.**
+
+[![CI](https://github.com/leminh05/CyberResearchAI/actions/workflows/ci.yml/badge.svg?branch=develop)](https://github.com/leminh05/CyberResearchAI/actions/workflows/ci.yml)
+![Python 3.11](https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white)
+![PostgreSQL + pgvector](https://img.shields.io/badge/PostgreSQL-pgvector-4169E1?logo=postgresql&logoColor=white)
+![Apache Spark](https://img.shields.io/badge/Apache%20Spark-3.5-E25A1C?logo=apachespark&logoColor=white)
+![Apache Kafka](https://img.shields.io/badge/Apache%20Kafka-streaming-231F20?logo=apachekafka&logoColor=white)
+![Hadoop HDFS](https://img.shields.io/badge/HDFS-data%20lake-66CCFF?logo=apachehadoop&logoColor=black)
+![React](https://img.shields.io/badge/React-chat-61DAFB?logo=react&logoColor=black)
+![Ollama](https://img.shields.io/badge/LLM-Ollama%20qwen2.5%3A7b-000000)
+
+<img src="docs/images/chat.png" alt="The chat answering a Vietnamese question about prompt injection, with numbered references and verified quotes" width="820">
+
+</div>
+
+## At a glance
+
+| | |
+|---|---|
+| **Corpus** | 54,301 cybersecurity papers and 74,005 embedded chunks in the large corpus; 377 papers with PDF text in the evaluated one |
+| **Sources** | arXiv, OpenAlex and Semantic Scholar APIs, plus the Kaggle arXiv snapshot through an HDFS lake |
+| **Big Data path** | PySpark Bronze / Silver / Gold on HDFS, and Kafka with Spark Structured Streaming into the chatbot's database |
+| **Search** | Hybrid vector + full-text search, a cross-encoder reranker, at most 3 chunks per paper |
+| **Answers** | Local LLM (Ollama); a citation is shown only if its quote is found word for word in the cited chunk |
+| **Measured** | Large corpus: MRR 0.935, 0 unsupported claims shown, 7 of 8 unanswerable questions declined. Silver labels from AI judges; limits in the [report](docs/evaluation_report.md) |
+
+```mermaid
+flowchart LR
+    A[arXiv / OpenAlex /<br/>Semantic Scholar] -->|daily, backfill| P[(PostgreSQL<br/>+ pgvector)]
+    A -->|crawler| K[[Kafka]] -->|Spark Structured<br/>Streaming| P
+    S[Kaggle arXiv<br/>snapshot] --> H[(HDFS lake<br/>Bronze / Silver / Gold)] -->|PySpark| P
+    P -->|hybrid search<br/>+ reranker| R[RAG engine]
+    R <-->|grounded prompt| L[Ollama LLM]
+    R -->|verified citations| W[FastAPI + React chat]
+```
+
+**Contents:** [Quickstart](#quickstart-docker) · [Setup](#setup-windows-powershell) ·
+[Data ingestion](#data-ingestion-phase-1) · [Processing](#pdf-processing-and-embeddings-phase-2) ·
+[RAG chatbot](#rag-chatbot-phase-3) · [Evaluation](#evaluation-phase-4) · [HDFS lake](#hdfs-data-lake) ·
+[Streaming](#streaming-ingestion) · [Web app](#web-application-phase-5) · [Tests](#tests) ·
+[Project layout](#project-layout)
 
 ## Status
 
@@ -428,6 +471,10 @@ docker compose --profile hdfs --profile streaming up -d kafka namenode datanode1
 docker compose --profile app run --rm app stream-produce --sources arxiv --max-records 10
 docker compose --profile app run --rm app stream-consume --once
 ```
+
+`--max-records` applies to each source and topic and is checked after each page, so one run
+can send up to a page more (100 records for arXiv and OpenAlex). Cutting a page short would
+make the saved cursor skip its remaining records.
 
 Streamed papers go to the database the website serves, so the chatbot can answer from them
 as soon as a batch ends, with no restart. `STREAM_DB` in `.env` sends them elsewhere. With

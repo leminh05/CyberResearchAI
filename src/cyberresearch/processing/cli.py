@@ -42,7 +42,7 @@ def add_processing_commands(subparsers: argparse._SubParsersAction) -> None:
     produce = subparsers.add_parser("stream-produce", help="crawl new papers into Kafka")
     produce.add_argument("--sources", nargs="+", help="subset of sources, e.g. arxiv openalex")
     produce.add_argument("--topics", nargs="+", help="subset of topic keys")
-    produce.add_argument("--max-records", type=int, help="max records per source/topic in one round")
+    produce.add_argument("--max-records", type=int, help="max records per source/topic in one round; checked after each page (up to 100 records), so a run can exceed it by one page")
     produce.add_argument("--interval", type=int, help="repeat every N seconds (default: one round)")
 
     consume = subparsers.add_parser("stream-consume", help="Kafka to Spark to PostgreSQL, running continuously")
