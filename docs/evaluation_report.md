@@ -529,7 +529,13 @@ Ollama's speed varies between runs.
 **One regression.** `hard-stuxnet` now gets a partial answer instead of an abstention. The answer has
 2 verified citations from a paper that mentions Stuxnet and says the excerpts do not explain how the
 PLCs were manipulated. Its evidence is real, but this question is labelled unanswerable, so it counts as
-a failure. `pqc` still abstains.
+a failure. The label was not changed after seeing this answer.
+
+`pqc` still abstains. Of its 8 retrieved passages only 1 is from a paper judged relevant (PQC in TLS, at
+rank 2); the others discuss PQC or quantum key distribution in general, and the answer says the papers
+cover TLS yet do not combine PQC with intrusion detection or TLS. The 7B model appears to read "intrusion
+detection or TLS" as needing both. Fixing it would mean changing the prompt or the model and running all
+40 questions again, which was not done.
 
 The reranker stays on, because the search gain is large and no unsupported claim reached the user. The
 cost is 2 s per question, one more model download on first use, and the one lost abstention.

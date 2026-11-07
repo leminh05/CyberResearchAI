@@ -23,7 +23,7 @@ def add_ingestion_commands(subparsers: argparse._SubParsersAction) -> None:
     def add_common(p: argparse.ArgumentParser) -> None:
         p.add_argument("--sources", nargs="+", help="subset of sources, e.g. arxiv openalex")
         p.add_argument("--topics", nargs="+", help="subset of topic keys, e.g. intrusion_detection")
-        p.add_argument("--max-records", type=int, help="max records per source/topic in this run")
+        p.add_argument("--max-records", type=int, help="max records per source/topic in this run; checked after each page (up to 100 records), so a run can exceed it by one page")
 
     daily = subparsers.add_parser("daily", help="incremental collection of recent papers")
     add_common(daily)
