@@ -20,7 +20,7 @@ import uvicorn  # noqa: E402
 from cyberresearch.config import WebSettings, load_settings  # noqa: E402
 from cyberresearch.db import resolve_database_url  # noqa: E402
 from cyberresearch.ingestion.storage import PostgresStore  # noqa: E402
-from cyberresearch.processing.embeddings import SentenceTransformerEmbedder  # noqa: E402
+from cyberresearch.processing.embeddings import SentenceTransformerEmbedder, load_reranker  # noqa: E402
 from cyberresearch.rag.llm import LLMError, LLMResult  # noqa: E402
 from cyberresearch.web.app import Services, create_app  # noqa: E402
 
@@ -64,6 +64,8 @@ class ScriptedGenerator:
 def main() -> None:
     settings = replace(load_settings(), web=WebSettings(rate_limit_per_minute=1000))
     database_url = resolve_database_url(settings)
+    if settings.rag.rerank:
+        load_reranker(settings.rag.rerank_model)  # at startup like the website, not during the first test
     services = Services(
         settings, "scripted", ScriptedGenerator(), SentenceTransformerEmbedder(settings.embedding),
         lambda: PostgresStore.connect(database_url).conn,
