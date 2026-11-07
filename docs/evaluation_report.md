@@ -363,3 +363,112 @@ and OpenAlex into a separate database:
 
 Not measured: throughput under sustained load, or a Kafka broker failure. The numbers
 in sections 2-9 do not include streamed papers.
+
+## 11. Large corpus (measured 2026-11-07)
+
+The Silver papers were loaded into a separate database, `cyberresearch_large`, a copy
+of the evaluated corpus plus the new papers. The numbers in sections 2-9 still describe
+the 377-paper corpus, and the chatbot still uses it.
+
+| | Evaluated corpus | Large corpus |
+|---|---:|---:|
+| Papers | 377 | 54,301 |
+| Chunks | 7,691 | 74,005 |
+| Database size | 73 MB | 628 MB |
+
+Loading took about 3 minutes and embedding the 53,424 new abstracts 48 minutes on the
+CPU. Log rotation failed during embedding because another process had the log file open
+on Windows, so some log lines were lost; the data was not affected.
+
+**Search speed**, per query with the query embedding included, 90 calls each
+([raw results](bigdata/large_corpus_retrieval.json)):
+
+| Search | p50 | p95 |
+|---|---:|---:|
+| Exact scan | 367 ms | 416 ms |
+| HNSW, ef_search 200 | 85 ms | 153 ms |
+| HNSW, ef_search 400 | 100 ms | 161 ms |
+
+HNSW is about four times faster here. Its 40 result lists had the same order as the
+exact scan for 29 questions, with a mean overlap of 0.947 in the candidates. Exact search
+remains the setting, since its delay is small next to answer generation.
+
+**Retrieval quality needs new labels.** With the original labels MRR fell from 0.908 to
+0.404, but those labels cover only the 377 papers, so a relevant new paper counts as wrong.
+New papers took 106 of the 150 top-5 places on the 30 answerable questions. So a new pool
+was judged in the same way as the original one: 681 candidates shown without ranks, scores
+or origin, of which 248 were judged relevant
+([labels](../config/eval/golden_set_large.yaml)).
+
+| Metric | 377 papers, original labels | 54,301 papers, new labels |
+|---|---:|---:|
+| Questions (answerable, English) | 29 | 31 |
+| MRR | 0.908 | 0.835 |
+| Precision@1 | 0.862 | 0.742 |
+| Hit@5 | 1.000 | 0.968 |
+| Precision@5 | 0.379 | 0.542 |
+| Recall@5 | 0.789 | 0.327 |
+| Recall@10 | not compared | 0.467 |
+
+Read these with care. The first result is right less often, but the top 5 hold more relevant
+papers. Precision@5 rises and recall@5 falls largely because each question now has many more
+relevant papers, not because the search changed. Exact scan and HNSW gave the same scores
+here. The two columns use different label sets and are not a controlled comparison.
+
+Limits of the new labels: one AI judge (Claude), from the title and the first 32 words of the
+abstract, with no human check. The judge saw the question and the pool, and the same system built
+most of the pool, so relevant papers it never found stay unknown and recall is optimistic. The
+thresholds were chosen on the small corpus, not tuned here.
+
+ChatGPT (model version not recorded) judged a blind sample of 56 papers from 6 questions, reading the full abstracts.
+The two judges agreed on 52 of 56 (92.9%, Cohen's kappa 0.857). ChatGPT found relevant 3
+of the 30 papers Claude had rejected and rejected 1 of the 26 it had accepted. This is agreement
+between two AI judges, not human validation, and they may share the same mistakes. The sample was
+chosen to balance both labels across 6 questions, so the rate does not describe all 681 judged
+papers. In two disagreements (both on `gnn-ids`) the use of graph neural networks appears only
+later in the abstract, past what Claude read, so some relevant papers may be labelled as not
+relevant. The labels were left unchanged.
+
+The unanswerable set also changed: `hard-bgp` and `hard-wpa3` became answerable, because this
+corpus has direct evidence for them. The similarity gate catches 3 of the remaining 8 questions.
+All 8 were abstained on in the answer run below.
+
+**Answer quality with the local model.** All 40 questions were run with Ollama
+([results](bigdata/large_corpus_answers_ollama.json)). The table compares only the 30 questions
+that are answerable in both corpora, each scored against its own corpus's labels.
+
+| Metric (same 30 questions) | 377 papers | 54,301 papers |
+|---|---:|---:|
+| Answered / partial / abstained | 19 / 10 / 1 | 21 / 8 / 1 |
+| Citation validity | 86.7% (72/83) | 91.7% (132/144) |
+| Unsupported evidence claims, before filtering | 10.1% (7/69) | 7.5% (7/93) |
+| Cited papers judged relevant | 0.754 | 0.770 |
+| Key-point coverage | 0.606 | 0.483 |
+
+| All 40 questions | 377 papers | 54,301 papers |
+|---|---:|---:|
+| Unsupported claims shown to the user | 0 | 0 |
+| Correct abstention on unanswerable questions | 10/10 | 8/8 |
+| End-to-end p50, questions reaching the model | 103 s | 114 s |
+| Cited papers that have full text | 32 of 51 | 15 of 99 |
+| Cited papers from the original 377 | 51 of 51 | 18 of 99 |
+
+The citation checks held on the larger corpus and answers cite more papers, but they lean heavily
+on abstracts. `hard-bgp` and `hard-wpa3`, unanswerable before, now get partial answers.
+
+Key-point coverage fell on 17 questions and rose on 5, and this result cannot be read as a plain
+loss of quality. The key points were written from the 377 papers, while 81 of the 99 cited papers
+are new, so an answer built on different valid papers can score low. The ddos answer scored 0.0
+because it covers classical models and metrics rather than the listed recurrent, flash-crowd and
+federated points. It may also reflect a real loss of detail from abstract-only evidence, and this
+run cannot separate the two. Measuring it would need key points rewritten for the larger corpus.
+
+Limits: one run per corpus, so small differences may be noise. The two runs used different
+relevance labels, and the small-corpus run predates a one-line change to the answer-language
+prompt.
+`gnn-ids` failed on its first attempt because Ollama ran out of memory while loading the model, so
+that question alone was rerun; the timing above includes the rerun. `pqc` abstained here even
+though the corpus holds papers judged relevant to it.
+
+Trade-off: abstract-only papers can push out detailed PDF chunks, and the top of the
+list then offers less detail and no page numbers.

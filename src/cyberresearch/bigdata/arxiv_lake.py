@@ -14,12 +14,18 @@ import json
 import re
 import time
 from collections import Counter
+from email.utils import parsedate_to_datetime
 from typing import Any
 
 from pyspark.sql import DataFrame, SparkSession, Window
 from pyspark.sql import functions as F
 from pyspark.sql.types import ArrayType, StringType, StructField, StructType
 
+from cyberresearch.ingestion.normalize import clean_text, normalize_arxiv_id, normalize_doi
+from cyberresearch.ingestion.schema import PaperRecord
+from cyberresearch.ingestion.storage import PostgresStore
+
+SNAPSHOT_SOURCE = "arxiv_kaggle"
 SECURITY_CATEGORY = "cs.CR"
 WITHDRAWN = r"(?i)\bthis (paper|article|submission|manuscript) (has been|is|was) withdrawn\b"
 _NEW_ID = r"^(\d{2})\d{2}\.\d+"  # 2401.00001
@@ -126,6 +132,44 @@ def python_silver(path: str) -> dict[str, Any]:
                     reasons["duplicate_title"] += 1
                 best[key] = min(best.get(key, row["id"]), row["id"])
     return {"records": records, "kept": len(best), "rejected": dict(reasons)}
+
+
+def silver_to_record(row: dict[str, Any]) -> PaperRecord:
+    """Map one Silver paper to the common schema; a separate source keeps the API's own payloads."""
+    arxiv_id = normalize_arxiv_id(row["id"]) or row["id"]
+    versions = row.get("versions") or []
+    created = versions[0]["created"] if versions else None
+    published = parsedate_to_datetime(created).date() if created else None
+    authors = [" ".join(p for p in (a[1], a[0], a[2]) if p) for a in row.get("authors_parsed") or [] if len(a) >= 3]
+    return PaperRecord(
+        source=SNAPSHOT_SOURCE,
+        source_id=arxiv_id,
+        title=row["title"],
+        abstract=row["abstract"],
+        authors=authors,
+        year=row.get("year"),
+        publication_date=published,
+        doi=normalize_doi(row.get("doi")),
+        arxiv_id=arxiv_id,
+        venue=clean_text(row.get("journal-ref")),
+        url=f"https://arxiv.org/abs/{arxiv_id}",
+        pdf_url=f"https://arxiv.org/pdf/{arxiv_id}",
+        is_open_access=True,
+        categories=(row.get("categories") or "").split(),
+        raw={"license": row.get("license")},
+    )
+
+
+def load_silver(spark: SparkSession, root: str, store: PostgresStore, limit: int | None = None) -> Counter:
+    """Upsert Silver papers into PostgreSQL. Safe to repeat: known papers come back as unchanged."""
+    silver_df = spark.read.parquet(f"{root.rstrip('/')}/silver/arxiv_security").orderBy(F.desc("id"))
+    if limit:
+        silver_df = silver_df.limit(limit)
+    counts: Counter = Counter()
+    for row in silver_df.toLocalIterator():
+        with store.transaction():
+            counts[store.upsert_record(silver_to_record(row.asDict(recursive=True))).value] += 1
+    return counts
 
 
 def _size_bytes(spark: SparkSession, path: str) -> tuple[int, int]:

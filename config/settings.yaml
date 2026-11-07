@@ -95,6 +95,13 @@ rag:
     num_ctx: 12288
     num_predict: 4096
     timeout_seconds: 900
+  # Hosted, with a free tier. Questions and paper excerpts are sent to Groq.
+  # The key comes from GROQ_API_KEY in .env.
+  groq:
+    model: "openai/gpt-oss-120b"
+    # The limit includes hidden reasoning tokens: 2048 cut 11 of 40 answers.
+    max_tokens: 4096
+    timeout_seconds: 120
   # Claude model and reasoning effort for answer generation.
   model: "claude-opus-5-5"
   effort: "medium"

@@ -191,7 +191,7 @@ def test_answer_language_is_stated_for_vietnamese() -> None:
     from cyberresearch.rag.prompts import answer_language
 
     assert answer_language("Mô hình ngôn ngữ phát hiện lỗ hổng như thế nào?") == "Vietnamese"
-    assert answer_language("How do GNNs work?") == "the same language as the question"
+    assert answer_language("How do GNNs work?") == "English"
     msg = build_user_message("Lỗ hổng phần mềm là gì?", EVIDENCE, [], 0.45)
     assert "in Vietnamese" in msg
 

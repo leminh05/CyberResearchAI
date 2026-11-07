@@ -1,0 +1,140 @@
+{
+  "corpus": {
+    "papers": 54301,
+    "chunks": 74005
+  },
+  "labels": "config/eval/golden_set_large.yaml (silver, pooled: recall is optimistic)",
+  "old_labels_exact_scan": {
+    "questions_answerable_english": 29,
+    "mrr": 0.404,
+    "context_size_chunks": 8,
+    "evidence_coverage": 0.586,
+    "context_chunk_precision": 0.189,
+    "context_paper_recall": 0.392,
+    "relevant_judged_total": 101,
+    "relevant_unindexed_total": 15,
+    "latency_s": {
+      "n": 40,
+      "mean": 0.3707,
+      "p50": 0.3529,
+      "p95": 0.4298,
+      "min": 0.2776,
+      "max": 0.9597
+    },
+    "precision@1": 0.276,
+    "recall@1": 0.19,
+    "hit@1": 0.276,
+    "precision@3": 0.172,
+    "recall@3": 0.353,
+    "hit@3": 0.517,
+    "precision@5": 0.124,
+    "recall@5": 0.392,
+    "hit@5": 0.586,
+    "precision@10": 0.066,
+    "recall@10": 0.397,
+    "hit@10": 0.586,
+    "unanswerable_gated_by_similarity": "3/10",
+    "non_english_rows": [
+      {
+        "id": "vi-federated-ids",
+        "best_similarity": 0.412,
+        "mrr": 0.0,
+        "hit@10": false
+      }
+    ]
+  },
+  "variants": {
+    "exact": {
+      "aggregate": {
+        "questions_answerable_english": 31,
+        "mrr": 0.835,
+        "context_size_chunks": 8,
+        "evidence_coverage": 0.968,
+        "context_chunk_precision": 0.574,
+        "context_paper_recall": 0.399,
+        "relevant_judged_total": 349,
+        "relevant_unindexed_total": 15,
+        "latency_s": {
+          "n": 40,
+          "mean": 0.354,
+          "p50": 0.3548,
+          "p95": 0.4276,
+          "min": 0.2725,
+          "max": 0.4549
+        },
+        "precision@1": 0.742,
+        "recall@1": 0.121,
+        "hit@1": 0.742,
+        "precision@3": 0.591,
+        "recall@3": 0.237,
+        "hit@3": 0.935,
+        "precision@5": 0.542,
+        "recall@5": 0.327,
+        "hit@5": 0.968,
+        "precision@10": 0.439,
+        "recall@10": 0.467,
+        "hit@10": 0.968,
+        "unanswerable_gated_by_similarity": "3/8",
+        "non_english_rows": [
+          {
+            "id": "vi-federated-ids",
+            "best_similarity": 0.412,
+            "mrr": 0.0,
+            "hit@10": false
+          }
+        ]
+      },
+      "retrieve_ms": {
+        "n": 90,
+        "p50": 364.2,
+        "p95": 416.4
+      }
+    },
+    "hnsw_ef200": {
+      "aggregate": {
+        "questions_answerable_english": 31,
+        "mrr": 0.835,
+        "context_size_chunks": 8,
+        "evidence_coverage": 0.968,
+        "context_chunk_precision": 0.574,
+        "context_paper_recall": 0.399,
+        "relevant_judged_total": 349,
+        "relevant_unindexed_total": 15,
+        "latency_s": {
+          "n": 40,
+          "mean": 0.0863,
+          "p50": 0.0859,
+          "p95": 0.1314,
+          "min": 0.041,
+          "max": 0.1471
+        },
+        "precision@1": 0.742,
+        "recall@1": 0.121,
+        "hit@1": 0.742,
+        "precision@3": 0.591,
+        "recall@3": 0.237,
+        "hit@3": 0.935,
+        "precision@5": 0.542,
+        "recall@5": 0.327,
+        "hit@5": 0.968,
+        "precision@10": 0.439,
+        "recall@10": 0.467,
+        "hit@10": 0.968,
+        "unanswerable_gated_by_similarity": "3/8",
+        "non_english_rows": [
+          {
+            "id": "vi-federated-ids",
+            "best_similarity": 0.412,
+            "mrr": 0.0,
+            "hit@10": false
+          }
+        ]
+      },
+      "retrieve_ms": {
+        "n": 90,
+        "p50": 87.2,
+        "p95": 142.5
+      }
+    }
+  }
+}
