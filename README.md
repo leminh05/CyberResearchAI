@@ -311,7 +311,7 @@ Claude (claude-opus-5-5, structured JSON) <── evidence E1..Ek + question + p
 | Same embedding model | `retrieval.py` refuses to run if `paper_chunks.embedding_model` differs from the query embedder |
 | Metadata filtering | year range, topic, `pdf`/`abstract`, excluded sections (default: `Front Matter`), paper ids - all in SQL |
 | Top-K selection | 40 nearest candidates → at most 3 chunks per paper → best 8 |
-| Reranking | **Not used** (see below) |
+| Reranking | Cross-encoder `ms-marco-MiniLM-L-6-v2` on the CPU over the merged candidates, before the per-paper cap; `rag.rerank` in `config/settings.yaml` (see below) |
 | Grounded prompt | `prompts.py`: evidence in `<evidence id="E3" ...>` blocks with year, section, page and similarity; no URLs or DOIs are shown to Claude; text inside excerpts is treated as data (prompt-injection guard) |
 | Structured output | `output_config.format` JSON schema: `answer_status`, `summary`, `claims[{statement, kind: evidence\|interpretation, citations[{evidence_id, quote}]}]`, `ambiguity_note`, `limitations`, `follow_up_suggestions` |
 | Citation validation | `citations.py`: the evidence id must be one retrieved for this question **and** the quote (≥ 5 words) must occur in that chunk's stored text. Unverified citations are dropped; an evidence claim with none left is removed and the answer is downgraded |
@@ -329,12 +329,12 @@ in Vietnamese). Latest run with the local model: **15/15 passed**, see
 [docs/rag_eval_results.md](docs/rag_eval_results.md). The Claude API path is
 covered by unit tests with a fake client; it has not been run live yet.
 
-**Why no reranker.** A cross-encoder reranker would add a second model
-download and per-question latency. On the test questions the bi-encoder
-ranking with the per-paper cap already puts on-topic chunks first, and Claude
-discards irrelevant excerpts itself (it must quote what it cites). Reranking
-becomes worth measuring when the corpus grows or the Phase 4 evaluation shows
-relevant chunks ranked below the top 8.
+**Why a reranker.** It was measured when the corpus grew to 54,301 papers: MRR rose
+from 0.835 to 0.935, at about 2 s per question on the CPU and one more model download.
+It changes only the order, so the similarity gate still uses cosine scores. On the
+377-paper corpus it changed little. Section 11 of the
+[evaluation report](docs/evaluation_report.md) has the numbers and their limits,
+including one more unanswerable question that got a partial answer.
 
 ## Evaluation (Phase 4)
 
@@ -397,8 +397,9 @@ Remove-Item Env:APP_DB
 
 To serve this corpus from the website, set `WEB_DB=cyberresearch_large` in `.env` and run
 `docker compose --profile web up -d`. Only the website uses it: crawling, processing and
-`main.py evaluate` stay on the main database, whose labels they rely on. Without that
-database, leave `WEB_DB` empty.
+`main.py evaluate` stay on the main database, whose labels they rely on. Streaming follows
+the website (see [Streaming ingestion](#streaming-ingestion)). Without that database, leave
+`WEB_DB` empty.
 
 The new papers have abstracts only, so answers from them cite no page numbers. Section 11
 of the evaluation report has the measured effect on answers.
@@ -428,10 +429,11 @@ docker compose --profile app run --rm app stream-produce --sources arxiv --max-r
 docker compose --profile app run --rm app stream-consume --once
 ```
 
-Streamed papers go to a separate database (`cyberresearch_stream`), so they cannot
-change the corpus the evaluation in Phase 4 measured, and the chatbot does not see them
-yet. Using them in the chatbot means pointing `DATABASE_URL` at that database and
-evaluating again. Only abstracts are embedded here; PDFs stay a job for `process`.
+Streamed papers go to the database the website serves, so the chatbot can answer from them
+as soon as a batch ends, with no restart. `STREAM_DB` in `.env` sends them elsewhere. With
+`WEB_DB` empty that is the main database, so streaming on a machine that holds the Phase 4
+corpus changes what `main.py evaluate` measures: set `STREAM_DB` to another name there. Only
+abstracts are embedded here; PDFs stay a job for `process`.
 
 Delivery is at least once: a batch is replayed after a crash, and the deduplicating
 upsert makes the replay harmless. Kafka has one broker, no authentication and no

@@ -68,7 +68,7 @@ def _streaming(args: argparse.Namespace, settings: Settings) -> int:
 
     url = settings.stream_database_url
     if not url:
-        # No fallback to DATABASE_URL: streamed papers would change the evaluated corpus.
+        # No fallback to DATABASE_URL: main.py outside Compose must not stream into the evaluated corpus.
         print("STREAM_DATABASE_URL is not set; run this through Docker Compose (see README).")
         return 2
     ensure_database(url)

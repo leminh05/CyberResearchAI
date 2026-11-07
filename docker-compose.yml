@@ -19,8 +19,8 @@ x-stream-app: &stream-app
     - path: .env
       required: false
   environment:
-    # A separate database, so streamed papers cannot change the evaluated corpus.
-    STREAM_DATABASE_URL: postgresql://${POSTGRES_USER:-cyber}:${POSTGRES_PASSWORD}@postgres:5432/${STREAM_DB:-cyberresearch_stream}
+    # The database the website serves, so the chatbot can answer from streamed papers.
+    STREAM_DATABASE_URL: postgresql://${POSTGRES_USER:-cyber}:${POSTGRES_PASSWORD}@postgres:5432/${STREAM_DB:-${WEB_DB:-${APP_DB:-${POSTGRES_DB:-cyberresearch}}}}
     HF_HOME: /cache/huggingface
   volumes:
     - ./logs:/app/logs
@@ -63,7 +63,7 @@ services:
       # Inside the Compose network the database host is the service name.
       DATABASE_URL: postgresql://${POSTGRES_USER:-cyber}:${POSTGRES_PASSWORD}@postgres:5432/${APP_DB:-${POSTGRES_DB:-cyberresearch}}
       OLLAMA_BASE_URL: ${OLLAMA_BASE_URL_DOCKER:-http://host.docker.internal:11434}
-      STREAM_DATABASE_URL: postgresql://${POSTGRES_USER:-cyber}:${POSTGRES_PASSWORD}@postgres:5432/${STREAM_DB:-cyberresearch_stream}
+      STREAM_DATABASE_URL: postgresql://${POSTGRES_USER:-cyber}:${POSTGRES_PASSWORD}@postgres:5432/${STREAM_DB:-${WEB_DB:-${APP_DB:-${POSTGRES_DB:-cyberresearch}}}}
       HF_HOME: /cache/huggingface
     volumes:
       - ./data:/app/data
