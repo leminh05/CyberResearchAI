@@ -12,6 +12,32 @@ Big Data-based Cybersecurity Research Assistant with RAG and Verified Citations
 | 4 | System evaluation: data, retrieval, answers, performance | Done (see [docs/evaluation_report.md](docs/evaluation_report.md)) |
 | 5 | Web application: FastAPI backend + React chat with verifiable citations | Done |
 
+## Quickstart (Docker)
+
+From an empty database to a working chatbot with a small sample of recent papers. Needs Docker
+Desktop with Compose v2, and [Ollama](https://ollama.com) running on this machine for the answers.
+
+```powershell
+ollama pull qwen2.5:7b
+Copy-Item .env.example .env       # then set POSTGRES_PASSWORD, and the same value in DATABASE_URL
+docker compose up -d --wait
+docker compose --profile app build app
+docker compose run --rm app init-db
+docker compose run --rm app daily --sources arxiv --max-records 50
+docker compose run --rm app process --no-download
+docker compose --profile web up -d --build --wait
+```
+
+Open http://127.0.0.1:8000. The first run downloads the images and the embedding model. An answer
+takes 1-3 minutes on a small GPU. Stop with `docker compose --profile web down`; data stays in the
+volumes.
+
+This sample holds only recently published papers with abstracts, so it shows that the system works,
+not the quality measured in the [evaluation report](docs/evaluation_report.md). More data: PDF text
+with `process` ([Phase 2](#pdf-processing-and-embeddings-phase-2)), a date range with `backfill`
+([Phase 1](#data-ingestion-phase-1)), and about 54,000 papers from the arXiv snapshot
+([large corpus](#large-corpus-for-the-chatbot)).
+
 ## Setup (Windows PowerShell)
 
 ```powershell
