@@ -310,6 +310,17 @@ discards irrelevant excerpts itself (it must quote what it cites). Reranking
 becomes worth measuring when the corpus grows or the Phase 4 evaluation shows
 relevant chunks ranked below the top 8.
 
+### Groq as answer generator
+
+Hosted and much faster than a local model on a small GPU, with a free tier. Questions
+and paper excerpts are sent to Groq, and free-tier limits apply: when the daily limit
+is reached the chatbot reports an error instead of waiting. Citation validation is the
+same as for the other providers. Put the key in `.env` as `GROQ_API_KEY`, then:
+
+```powershell
+python main.py ask "How are GNNs used for IDS?" --provider groq
+```
+
 ## Evaluation (Phase 4)
 
 ```powershell
@@ -356,6 +367,26 @@ Bronze keeps every raw record, Silver keeps cleaned and de-duplicated `cs.CR` pa
 plus the rejected ids, and Gold holds statistics by year and by related category. The
 report is saved to `data/eval/lake_report.json`; the measured run is in
 [docs/bigdata/lake_report.json](docs/bigdata/lake_report.json).
+
+### Large corpus for the chatbot
+
+About 54,000 cybersecurity papers in their own database, `cyberresearch_large`, which
+starts as a copy of the main one. The application uses it only when `APP_DB` is set:
+
+```powershell
+$env:APP_DB = "cyberresearch_large"
+docker compose --profile app --profile hdfs run --rm app lake-load              # Silver papers into PostgreSQL
+docker compose --profile app --profile hdfs run --rm app process --no-download  # embeddings for the abstracts
+Remove-Item Env:APP_DB
+```
+
+To serve this corpus from the website, set `WEB_DB=cyberresearch_large` in `.env` and run
+`docker compose --profile web up -d`. Only the website uses it: crawling, processing and
+`main.py evaluate` stay on the main database, whose labels they rely on. Without that
+database, leave `WEB_DB` empty.
+
+The new papers have abstracts only, so answers from them cite no page numbers. Section 11
+of the evaluation report has the measured effect on answers.
 
 ## Streaming ingestion
 
@@ -498,6 +529,10 @@ binary or copyrighted PDFs are stored in the repository.
 
 Database tests use `TEST_DATABASE_URL` if set; otherwise a temporary embedded
 PostgreSQL. Each test runs in its own throw-away schema.
+
+GitHub Actions ([ci.yml](.github/workflows/ci.yml)) runs the offline tests, the frontend
+tests and the frontend build on every pull request and on pushes to `main` and `develop`.
+It does not run `live`, `model` or `test:e2e`.
 
 ## Project layout
 

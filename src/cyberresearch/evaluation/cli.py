@@ -22,7 +22,7 @@ def add_evaluation_commands(subparsers: argparse._SubParsersAction) -> None:
     ev = subparsers.add_parser("evaluate", help="Phase 4 system evaluation (results in docs/evaluation/)")
     ev.add_argument("--part", nargs="+", choices=PARTS, default=["data", "retrieval", "performance"],
                     help="what to measure; 'answers' calls the LLM and is slow (default: all but answers)")
-    ev.add_argument("--provider", choices=["claude", "ollama"], help="answer generator for --part answers")
+    ev.add_argument("--provider", choices=["claude", "ollama", "groq"], help="answer generator for --part answers")
     ev.add_argument("--ids", nargs="+", help="only these golden-set question ids")
     ev.add_argument("--pdfs", type=int, default=20, help="PDFs used for the processing throughput test")
     ev.add_argument("--repeats", type=int, default=5, help="repeats per query for latency tests")
@@ -113,7 +113,14 @@ def _answers(args: argparse.Namespace, settings: Settings, retriever, questions,
     from cyberresearch.rag.engine import RAGEngine
 
     provider = args.provider or settings.rag.provider
-    if provider == "ollama":
+    if provider == "groq":
+        from cyberresearch.rag.groq_client import GroqGenerator, key_is_set
+
+        if not key_is_set():
+            print("GROQ_API_KEY is not set. Add it to .env (see .env.example), or use the free local model: --provider ollama")
+            return 2
+        generator, model = GroqGenerator(settings.rag), settings.rag.groq_model
+    elif provider == "ollama":
         from cyberresearch.rag.ollama_client import OllamaGenerator
 
         generator, model = OllamaGenerator(settings.rag), settings.rag.ollama_model

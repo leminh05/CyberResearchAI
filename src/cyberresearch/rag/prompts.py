@@ -120,6 +120,9 @@ def answer_language(question: str) -> str:
     """
     if any(ch in _VIETNAMESE_LETTERS for ch in question):
         return "Vietnamese"
+    # "the same language as the question" made gpt-oss-120b answer an English question in Spanish.
+    if all(ord(ch) < 128 for ch in question):
+        return "English"
     return "the same language as the question"
 
 

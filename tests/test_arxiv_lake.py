@@ -4,7 +4,7 @@ import json
 
 import pytest
 
-from cyberresearch.bigdata.arxiv_lake import gold, python_silver, read_raw, silver
+from cyberresearch.bigdata.arxiv_lake import SNAPSHOT_SOURCE, gold, python_silver, read_raw, silver, silver_to_record
 
 pytestmark = pytest.mark.spark
 ABSTRACT = "  We study   intrusion\n detection. "
@@ -61,3 +61,16 @@ def test_gold_tables(spark, source) -> None:
         1999: (1, 0), 2001: (1, 0), 2024: (1, 1),
     }
     assert {r["category"]: r["count"] for r in tables["cross_categories"].collect()} == {"cs.NI": 1}
+
+
+def test_silver_row_becomes_a_record() -> None:
+    record = silver_to_record({
+        "id": "2401.00001v2", "title": "Graph IDS", "abstract": "We study IDS.", "year": 2024, "doi": "https://doi.org/10.1/A",
+        "journal-ref": None, "license": "http://creativecommons.org/licenses/by/4.0/", "categories": "cs.CR cs.NI",
+        "versions": [{"version": "v1", "created": "Mon, 2 Apr 2007 19:18:42 GMT"}],
+        "authors_parsed": [["Lee", "Ann", ""], ["Tran", "Binh", "Jr."], ["broken"]],
+    })
+    assert record.source == SNAPSHOT_SOURCE and record.source_id == record.arxiv_id == "2401.00001"
+    assert record.authors == ["Ann Lee", "Binh Tran Jr."] and record.doi == "10.1/a"
+    assert record.publication_date.isoformat() == "2007-04-02" and record.categories == ["cs.CR", "cs.NI"]
+    assert record.is_valid() and record.raw == {"license": "http://creativecommons.org/licenses/by/4.0/"}

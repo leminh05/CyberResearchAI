@@ -35,6 +35,10 @@ def add_processing_commands(subparsers: argparse._SubParsersAction) -> None:
     lake.add_argument("--root", help="lake root (default: spark.lake_root in settings.yaml)")
     lake.add_argument("--no-compare", action="store_true", help="skip the Python vs Spark comparison")
 
+    load = subparsers.add_parser("lake-load", help="load Silver papers from the lake into DATABASE_URL")
+    load.add_argument("--limit", type=int, help="newest N papers only")
+    load.add_argument("--root", help="lake root (default: spark.lake_root in settings.yaml)")
+
     produce = subparsers.add_parser("stream-produce", help="crawl new papers into Kafka")
     produce.add_argument("--sources", nargs="+", help="subset of sources, e.g. arxiv openalex")
     produce.add_argument("--topics", nargs="+", help="subset of topic keys")
@@ -138,6 +142,18 @@ def run_processing_command(args: argparse.Namespace, settings: Settings) -> int:
         output.write_text(json.dumps(report, indent=2), encoding="utf-8")
         print(json.dumps(report, indent=2))
         print("Saved", output)
+        return 0
+    if args.command == "lake-load":
+        from cyberresearch.bigdata.arxiv_lake import load_silver
+        from cyberresearch.bigdata.spark_jobs import create_spark_session
+
+        base, _ = _stores(settings)
+        spark = create_spark_session(settings.spark, "lake-load")
+        try:
+            print(dict(load_silver(spark, args.root or settings.spark.lake_root, base, args.limit)))
+        finally:
+            spark.stop()
+            base.close()
         return 0
     if args.command in ("stream-produce", "stream-consume"):
         return _streaming(args, settings)

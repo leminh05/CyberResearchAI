@@ -95,3 +95,14 @@ def test_abstention_scores_zero_completeness_and_aggregates() -> None:
     agg = aggregate_answers(rows)
     assert agg["answerable"]["abstained"] == 1 and agg["unanswerable"]["correct_abstention_rate"] == 1.0
     assert agg["citation_validity_rate"] is None  # no citations at all
+
+
+def test_large_corpus_labels_only_add_to_the_original_set() -> None:
+    from cyberresearch.config import PROJECT_ROOT
+    from cyberresearch.evaluation.dataset import load_golden_set
+
+    original = {q["id"]: q for q in load_golden_set()}
+    large = {q["id"]: q for q in load_golden_set(PROJECT_ROOT / "config" / "eval" / "golden_set_large.yaml")}
+    assert large.keys() == original.keys()
+    assert all(set(original[i]["relevant"]) <= set(large[i]["relevant"]) for i in original)
+    assert {i for i in original if original[i]["type"] != large[i]["type"]} == {"hard-bgp", "hard-wpa3"}

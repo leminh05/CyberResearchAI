@@ -61,7 +61,7 @@ services:
         required: false
     environment:
       # Inside the Compose network the database host is the service name.
-      DATABASE_URL: postgresql://${POSTGRES_USER:-cyber}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-cyberresearch}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-cyber}:${POSTGRES_PASSWORD}@postgres:5432/${APP_DB:-${POSTGRES_DB:-cyberresearch}}
       OLLAMA_BASE_URL: ${OLLAMA_BASE_URL_DOCKER:-http://host.docker.internal:11434}
       STREAM_DATABASE_URL: postgresql://${POSTGRES_USER:-cyber}:${POSTGRES_PASSWORD}@postgres:5432/${STREAM_DB:-cyberresearch_stream}
       HF_HOME: /cache/huggingface
@@ -84,7 +84,7 @@ services:
       - path: .env
         required: false
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-cyber}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-cyberresearch}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-cyber}:${POSTGRES_PASSWORD}@postgres:5432/${WEB_DB:-${APP_DB:-${POSTGRES_DB:-cyberresearch}}}
       OLLAMA_BASE_URL: ${OLLAMA_BASE_URL_DOCKER:-http://host.docker.internal:11434}
       HF_HOME: /cache/huggingface
     ports:
