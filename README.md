@@ -310,17 +310,6 @@ discards irrelevant excerpts itself (it must quote what it cites). Reranking
 becomes worth measuring when the corpus grows or the Phase 4 evaluation shows
 relevant chunks ranked below the top 8.
 
-### Groq as answer generator
-
-Hosted and much faster than a local model on a small GPU, with a free tier. Questions
-and paper excerpts are sent to Groq, and free-tier limits apply: when the daily limit
-is reached the chatbot reports an error instead of waiting. Citation validation is the
-same as for the other providers. Put the key in `.env` as `GROQ_API_KEY`, then:
-
-```powershell
-python main.py ask "How are GNNs used for IDS?" --provider groq
-```
-
 ## Evaluation (Phase 4)
 
 ```powershell
