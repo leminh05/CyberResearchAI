@@ -6,6 +6,9 @@
 # (Claude) from the title and the first 32 words of the abstract, not by a domain expert: silver
 # labels. Relevant papers outside the pool stay unknown, so recall is optimistic.
 # hard-bgp and hard-wpa3 became answerable, because this corpus has direct evidence for them.
+# Second pool, same day and same judge: the 45 papers the reranker put in a top 5 without a judgment,
+# mixed with 53 already judged ones and shown without origin; 28 were judged relevant. On the mixed-in
+# papers the judge repeated 48 of 53 earlier labels. Ranks 6-10 of the reranked list stay partly unjudged.
 questions:
 - id: gnn-ids
   type: answerable
@@ -70,6 +73,10 @@ questions:
   - arxiv:2605.05644
   - arxiv:2610.12704
   - arxiv:2610.14767
+  - arxiv:2303.16956
+  - arxiv:2405.13062
+  - arxiv:2602.00219
+  - arxiv:2609.27202
   key_points: &id001
   - - federated
   - - raw data
@@ -97,6 +104,8 @@ questions:
   - doi:10.1109/access.2021.3110188
   - doi:10.1109/icspis63676.2024.10812621
   - doi:10.1109/mprv.2018.03367731
+  - arxiv:1901.04805
+  - arxiv:2106.12753
   key_points:
   - - autoencoder
   - - federated
@@ -167,6 +176,7 @@ questions:
   - doi:10.1016/j.bdr.2022.100359
   - doi:10.1016/j.jisa.2026.104448
   - doi:10.1109/tifs.2024.3488967
+  - arxiv:2505.08006
   key_points:
   - - shap
   - - lime
@@ -195,6 +205,9 @@ questions:
   - arxiv:2502.00975
   - doi:10.1007/978-3-031-64064-3_7
   - doi:10.1109/mcomstd.0001.2100022
+  - arxiv:2305.09475
+  - arxiv:2411.05890
+  - arxiv:2511.04114
   key_points:
   - - recurrent
     - rnn
@@ -215,6 +228,7 @@ questions:
   - arxiv:2509.23571
   - arxiv:2511.20290
   - arxiv:2603.23966
+  - arxiv:2610.09007
   key_points:
   - - small language model
     - slm
@@ -257,6 +271,8 @@ questions:
   - arxiv:2509.09592
   - arxiv:2511.15434
   - doi:10.1145/3704522.3704532
+  - arxiv:2511.09606
+  - arxiv:2601.21261
   key_points:
   - - url
     - website
@@ -305,6 +321,7 @@ questions:
   - arxiv:2608.27800
   - arxiv:2609.14003
   - arxiv:2609.21686
+  - arxiv:2604.05432
   key_points:
   - - tool-call
     - tool call
@@ -325,6 +342,7 @@ questions:
   - arxiv:2103.02895
   - arxiv:2107.14582
   - arxiv:2112.12998
+  - arxiv:2211.05766
   key_points:
   - - differential privacy
     - differentially private
@@ -351,6 +369,8 @@ questions:
   - doi:10.1016/j.cose.2024.104018
   - doi:10.3390/encyclopedia4040099
   - doi:10.34218/ijcs_04_01_001
+  - arxiv:2410.18291
+  - doi:10.1109/it64745.2025.10930254
   key_points:
   - - never trust
     - always verify
@@ -425,6 +445,9 @@ questions:
   - arxiv:2512.07827
   - doi:10.1109/ic2ew.2016.16
   - doi:10.1109/jsyst.2017.2762161
+  - arxiv:2206.13614
+  - arxiv:2603.14122
+  - doi:10.1145/3806008.3811698
   key_points:
   - - honeypot
   - - esp32
@@ -493,6 +516,7 @@ questions:
   - doi:10.1109/csnt69054.2026.11502111
   - doi:10.13182/xyz-46886
   - doi:10.5121/ijcnc.2024.16102
+  - arxiv:2511.18230
   key_points:
   - - quantiz
   - - decision tree
@@ -581,6 +605,8 @@ questions:
   - arxiv:2505.02231
   - doi:10.1016/j.cose.2025.104352
   - doi:10.1109/csci49370.2019.00021
+  - arxiv:2201.10349
+  - arxiv:2309.12955
   key_points:
   - - v2x
     - vehicle-to-everything
@@ -617,6 +643,7 @@ questions:
   - doi:10.1109/tdsc.2022.3201582
   - doi:10.1109/tetc.2022.3178283
   - doi:10.1145/3675741.3675754
+  - doi:10.1016/j.compeleceng.2023.108692
   key_points:
   - - cic-ids2017
     - cicids2017
@@ -653,6 +680,7 @@ questions:
   - doi:10.1007/s13042-025-02873-w
   - doi:10.1109/trustcom66490.2025.00125
   - doi:10.3390/jcp1020014
+  - arxiv:2310.00070
   key_points:
   - - evasion
     - perturb
@@ -678,6 +706,9 @@ questions:
   - doi:10.1109/cars67163.2025.11337953
   - doi:10.1109/isdfs65363.2025.11012066
   - doi:10.1145/3303771
+  - arxiv:2005.02862
+  - arxiv:2108.10567
+  - doi:10.3390/app10144945
   key_points:
   - - behavio
   - - authorized
@@ -770,6 +801,10 @@ questions:
   - arxiv:2605.05644
   - arxiv:2610.12704
   - arxiv:2610.14767
+  - arxiv:2303.16956
+  - arxiv:2405.13062
+  - arxiv:2602.00219
+  - arxiv:2609.27202
   key_points: *id001
 - id: out-cake
   type: unanswerable

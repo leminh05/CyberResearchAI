@@ -116,6 +116,10 @@ rag:
   hybrid_search: true
   lexical_max_doc_fraction: 0.10
   rrf_k: 60
+  # Cross-encoder over the merged candidates, about 1.8 s per question on the CPU.
+  # Measured in docs/evaluation_report.md, section 11.
+  rerank: true
+  rerank_model: "cross-encoder/ms-marco-MiniLM-L-6-v2"
   max_chunks_per_paper: 3
   # Cosine-similarity gates (calibrated on the test questions, see README):
   # below min_similarity nothing is sent to Claude ("insufficient evidence");

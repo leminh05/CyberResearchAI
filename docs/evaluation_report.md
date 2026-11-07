@@ -347,7 +347,7 @@ it finished in 16.7 s. The likely cause is that local mode does not offer delaye
 tasks again. The Spark source was not read to confirm this.
 
 **Streaming** (crawler, Kafka, Spark Structured Streaming, PostgreSQL), live with arXiv
-and OpenAlex into a separate database:
+and OpenAlex into a separate database at that time (section 11 connects it to the chatbot):
 
 - A micro-batch started at most 17.2 s after its oldest message was sent while the
   consumer was waiting (trigger every 30 s). This is one small batch of 14 messages,
@@ -368,7 +368,7 @@ in sections 2-9 do not include streamed papers.
 
 The Silver papers were loaded into a separate database, `cyberresearch_large`, a copy
 of the evaluated corpus plus the new papers. The numbers in sections 2-9 still describe
-the 377-paper corpus, and the chatbot still uses it.
+the 377-paper corpus. The website serves the large corpus; `main.py evaluate` stays on the main one.
 
 | | Evaluated corpus | Large corpus |
 |---|---:|---:|
@@ -472,3 +472,82 @@ though the corpus holds papers judged relevant to it.
 
 Trade-off: abstract-only papers can push out detailed PDF chunks, and the top of the
 list then offers less detail and no page numbers.
+
+### Cross-encoder reranker
+
+One model was chosen in advance (`cross-encoder/ms-marco-MiniLM-L-6-v2`, on the CPU) and no setting
+was tuned. It reorders the merged candidates before the per-paper cap. `Evidence.similarity` stays
+cosine, so the gate is not affected: it caught the same 3 of 8 questions.
+
+**The first comparison was unfair, in the baseline's favour.** The labels were pooled from the
+baseline's results, so the baseline had no unjudged paper in its top 5, while the reranker had 45 of
+153, all counted as wrong. A second pool was judged: those 45 papers mixed with 53 already judged and
+shown without origin. 28 of the 45 were judged relevant, and the judge repeated 48 of the 53 earlier
+labels. Recall below is lower than in the table above because each question now has more relevant
+papers.
+
+| 54,301 papers, 31 questions, same labels | Without | With reranker |
+|---|---:|---:|
+| MRR | 0.835 | 0.935 |
+| Precision@1 | 0.742 | 0.871 |
+| Precision@3 | 0.591 | 0.731 |
+| Precision@5 | 0.542 | 0.671 |
+| Hit@5 | 0.968 | 1.000 |
+| Recall@5 | 0.312 | 0.367 |
+| Search p50, query embedding included | 364 ms | 2,220 ms |
+
+Reciprocal rank rose on 8 questions, fell on 3 (`iiot-ids`, `prompt-injection`, `token-theft`) and
+stayed the same on 20. On the 377 papers, with their original labels, it changed little: MRR 0.908 to
+0.919, Precision@1 0.862 both, Precision@5 0.379 to 0.352, Recall@5 0.789 to 0.747.
+
+Limits: the second pool had the same single AI judge (Claude), who knew why the pool existed, although
+the mixed-in papers hid which were new. No human checked it and ChatGPT did not review it. Ranks 6-10 of
+the reranked list are only partly judged, so only the top 5 is compared.
+
+**Effect on answers.** All 40 questions were run again with Ollama
+([results](bigdata/large_corpus_answers_ollama_reranked.json)), scored with the same labels and
+compared with the run above.
+
+| 54,301 papers, 40 questions | Without | With reranker |
+|---|---:|---:|
+| Answered / partial / abstained (32 answerable) | 21 / 10 / 1 | 23 / 8 / 1 |
+| Citation validity | 92.1% (139/151) | 91.3% (157/172) |
+| Unsupported evidence claims, before filtering | 7.1% (7/99) | 4.4% (5/113) |
+| Unsupported claims shown to the user | 0 | 0 |
+| Cited papers judged relevant | 0.776 | 0.782 |
+| Key-point coverage | 0.483 | 0.578 |
+| Correct abstention on unanswerable questions | 8/8 | 7/8 |
+| Cited papers that have full text | 15 of 99 | 12 of 115 |
+| End-to-end p50, questions reaching the model | 114 s | 129 s |
+
+Answers improved less clearly than search. Key-point coverage rose on 14 questions and fell on 5, but
+14 of the 32 answerable questions changed status in one direction or the other (8 partial to answered,
+6 answered to partial), with one run each, so small differences may be noise. The added delay is more
+than the 2 s of reranking: the model also wrote longer answers (p50 618 against 554 tokens), and
+Ollama's speed varies between runs.
+
+**One regression.** `hard-stuxnet` now gets a partial answer instead of an abstention. The answer has
+2 verified citations from a paper that mentions Stuxnet and says the excerpts do not explain how the
+PLCs were manipulated. Its evidence is real, but this question is labelled unanswerable, so it counts as
+a failure. `pqc` still abstains.
+
+The reranker stays on, because the search gain is large and no unsupported claim reached the user. The
+cost is 2 s per question, one more model download on first use, and the one lost abstention.
+
+### Streaming into the chatbot
+
+Streamed papers now go to the database the website serves. One run through the real path, arXiv
+only, with the website running: the crawler sent 32 messages, and one micro-batch stored 31 new papers
+(1 unchanged), with 43 abstract chunks, no rejected message and no processing error. The website's
+health check moved from 54,301 to 54,332 papers without a restart.
+
+The website was then asked "How can a large-small model collaboration framework be used for CAN bus
+intrusion detection?". It answered in 117 s from a paper streamed minutes earlier (arXiv 2611.07853),
+with 4 evidence claims whose quotes passed validation. The question was written from that paper's
+title, so this shows the paper can be found and cited, not that streamed papers improve answers.
+
+All numbers above were measured before these 31 papers arrived. Running `evaluate_large_corpus.py` again
+measures a larger corpus, and new papers have no labels, so a relevant one counts as wrong. The hourly
+crawler was not left running. The papers streamed earlier stayed in `cyberresearch_stream`; the Kafka
+offsets had already passed them, so they were not copied. Not measured: answer quality on streamed
+papers in general, or a long unattended run.

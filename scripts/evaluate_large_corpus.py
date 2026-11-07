@@ -1,7 +1,7 @@
 """Retrieval on the large corpus with its own labels: exact scan vs HNSW.
 
     python scripts/evaluate_large_corpus.py            # docs/bigdata/large_corpus_retrieval.json
-    python scripts/evaluate_large_corpus.py --answers  # local model; docs/bigdata/large_corpus_answers_ollama.json
+    python scripts/evaluate_large_corpus.py --answers  # local model; docs/bigdata/large_corpus_answers_ollama_reranked.json
 
 Uses the database in DATABASE_URL with its name replaced by cyberresearch_large.
 """
@@ -29,7 +29,7 @@ from cyberresearch.rag.retrieval import Retriever  # noqa: E402
 
 LABELS = PROJECT_ROOT / "config" / "eval" / "golden_set_large.yaml"
 OUTPUT = PROJECT_ROOT / "docs" / "bigdata" / "large_corpus_retrieval.json"
-ANSWERS_OUTPUT = PROJECT_ROOT / "docs" / "bigdata" / "large_corpus_answers_ollama.json"
+ANSWERS_OUTPUT = PROJECT_ROOT / "docs" / "bigdata" / "large_corpus_answers_ollama_reranked.json"
 
 
 def run_answers(settings, conn, embedder, questions, keys) -> int:
@@ -43,7 +43,13 @@ def run_answers(settings, conn, embedder, questions, keys) -> int:
         return 2
     timer = TimedGenerator(generator)
     engine = RAGEngine(Retriever(conn, embedder, settings.rag), timer, settings.rag, translator=timer)
-    meta = {"provider": "ollama", "llm_model": settings.rag.ollama_model, "labels": LABELS.name, "database": "cyberresearch_large"}
+    meta = {
+        "provider": "ollama",
+        "llm_model": settings.rag.ollama_model,
+        "rerank_model": settings.rag.rerank_model if settings.rag.rerank else None,
+        "labels": LABELS.name,
+        "database": "cyberresearch_large",
+    }
     rows: list[dict] = []
 
     def on_row(row: dict) -> None:
@@ -77,13 +83,17 @@ def main() -> int:
 
     report = {
         "corpus": {"papers": count("papers"), "chunks": count("paper_chunks")},
-        "labels": "config/eval/golden_set_large.yaml (silver, pooled: recall is optimistic)",
+        "labels": "config/eval/golden_set_large.yaml (silver, pooled: recall is optimistic; reranked top 6-10 only partly judged)",
         "old_labels_exact_scan": None,
         "variants": {},
     }
-    exact = Retriever(conn, embedder, replace(settings.rag, exact_vector_search=True))
+    exact = Retriever(conn, embedder, replace(settings.rag, exact_vector_search=True, rerank=False))
     report["old_labels_exact_scan"] = evaluate_retrieval(exact, old_labels, keys, indexed)["aggregate"]
-    variants = {"exact": exact, "hnsw_ef200": Retriever(conn, embedder, replace(settings.rag, exact_vector_search=False))}
+    variants = {
+        "exact": exact,
+        "hnsw_ef200": Retriever(conn, embedder, replace(settings.rag, exact_vector_search=False, rerank=False)),
+        "exact_reranked": Retriever(conn, embedder, replace(settings.rag, exact_vector_search=True, rerank=True)),
+    }
     for name, retriever in variants.items():
         aggregate = evaluate_retrieval(retriever, new_labels, keys, indexed)["aggregate"]
         timings = []

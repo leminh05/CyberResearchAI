@@ -98,6 +98,8 @@ class RagSettings:
     candidate_k: int = 40
     exact_vector_search: bool = True
     hnsw_ef_search: int = 200
+    rerank: bool = False
+    rerank_model: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
     hybrid_search: bool = True
     lexical_max_doc_fraction: float = 0.10
     rrf_k: int = 60
@@ -161,7 +163,7 @@ class Settings:
     rag: RagSettings = field(default_factory=RagSettings)
     web: WebSettings = field(default_factory=WebSettings)
     streaming: StreamingSettings = field(default_factory=StreamingSettings)
-    # Separate from database_url, so streamed papers cannot change the evaluated corpus.
+    # Compose points this at the database the website serves; database_url stays the evaluated corpus.
     stream_database_url: str | None = None
     # Only whether a key exists; the SDK reads the key itself from the environment.
     anthropic_api_key_present: bool = False

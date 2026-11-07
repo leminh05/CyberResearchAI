@@ -367,3 +367,33 @@ def test_judge_rules() -> None:
     assert not judge("outside", _response("answered", [supported]))[0]
     assert judge("ambiguous", _response("answered", [supported], note="several meanings"))[0]
     assert not judge("weak", _response("error"))[0]
+
+
+class ReverseReranker:
+    """Puts the last candidate first, whatever the text."""
+
+    def __init__(self) -> None:
+        self.queries: list[str] = []
+
+    def scores(self, query: str, texts: list[str]) -> list[float]:
+        self.queries.append(query)
+        return [float(i) for i in range(len(texts))]
+
+
+def test_reranker_changes_the_order_but_not_similarity_or_the_paper_cap(corpus, store) -> None:
+    plain = Retriever(store.conn, HashEmbedder(), SETTINGS).retrieve("network intrusion", top_k=10)
+    reranker = ReverseReranker()
+    reranked = Retriever(store.conn, HashEmbedder(), SETTINGS, reranker).retrieve("network intrusion", top_k=10)
+
+    assert reranker.queries == ["network intrusion"]
+    assert [e.chunk_id for e in reranked] != [e.chunk_id for e in plain]
+    # The paper cap can select other chunks, so compare those in both lists.
+    before = {e.chunk_id: e.similarity for e in plain}
+    shared = [e for e in reranked if e.chunk_id in before]
+    assert shared and all(e.similarity == pytest.approx(before[e.chunk_id]) for e in shared)
+    papers = [e.paper_id for e in reranked]
+    assert all(papers.count(p) <= SETTINGS.max_chunks_per_paper for p in papers)
+
+
+def test_reranker_is_off_unless_enabled(store) -> None:
+    assert Retriever(store.conn, HashEmbedder(), SETTINGS).reranker is None

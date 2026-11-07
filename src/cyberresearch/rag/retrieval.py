@@ -7,32 +7,37 @@ Steps:
   3. Full-text search for chunks containing all rare terms of the question,
      merged with step 2 by reciprocal rank fusion. Exact terms ("federated")
      recover papers that a generic long document outranks by cosine alone.
-  4. Diversity selection: at most ``max_chunks_per_paper`` chunks per paper,
+  4. Optional cross-encoder reranking of the merged candidates (``rerank``).
+  5. Diversity selection: at most ``max_chunks_per_paper`` chunks per paper,
      then the best ``top_k``. Without it, one long paper can fill every slot.
 
 ``Evidence.similarity`` stays the cosine similarity for every chunk. Fusion can
 only make the relevance gate of the engine stricter: the per-paper cap may drop
 the top cosine chunk in favour of a full-text hit, never add a closer one.
 
-No cross-encoder reranker is used: on this corpus the bi-encoder ranking plus
-the per-paper cap already returns on-topic chunks for the test questions, and a
-reranker would add a second model download and latency (see README).
+Reranking changes only the order. ``Evidence.similarity`` stays cosine for the same
+reason, so the relevance gate does not depend on the reranker's scores.
 """
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Protocol
 
 import psycopg
 
 from cyberresearch.config import RagSettings
-from cyberresearch.processing.embeddings import Embedder
+from cyberresearch.processing.embeddings import Embedder, load_reranker
 from cyberresearch.processing.store import to_vector_literal
 
 
 # shortcut: a long question only uses its first terms, enough for real questions.
 MAX_LEXICAL_TERMS = 32
+
+
+class Reranker(Protocol):
+    def scores(self, query: str, texts: list[str]) -> list[float]:
+        ...
 
 
 class EmbeddingModelMismatch(Exception):
@@ -132,10 +137,13 @@ def fuse_rankings(rankings: list[list[dict[str, Any]]], k: int) -> list[dict[str
 class Retriever:
     """Embeds questions and searches the chunk table."""
 
-    def __init__(self, conn: psycopg.Connection, embedder: Embedder, settings: RagSettings) -> None:
+    def __init__(
+        self, conn: psycopg.Connection, embedder: Embedder, settings: RagSettings, reranker: Reranker | None = None
+    ) -> None:
         self.conn = conn
         self.embedder = embedder
         self.settings = settings
+        self.reranker = reranker or (load_reranker(settings.rerank_model) if settings.rerank else None)
 
     def check_embedding_model(self) -> None:
         """Fail loudly if chunks were embedded with another model.
@@ -228,6 +236,9 @@ class Retriever:
                 "ts_rank(c.text_search, %(lexical)s::tsquery) DESC, c.chunk_id",
             )
             rows = fuse_rankings([rows, lexical], self.settings.rrf_k)
+        if self.reranker and rows:
+            scores = self.reranker.scores(query, [r["text"] for r in rows])
+            rows = [rows[i] for i in sorted(range(len(rows)), key=scores.__getitem__, reverse=True)]
 
         selected = select_diverse(rows, top_k or self.settings.top_k, self.settings.max_chunks_per_paper)
         return [
