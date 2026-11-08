@@ -39,7 +39,7 @@ flowchart LR
     R -->|verified citations| W[FastAPI + React chat]
 ```
 
-**Contents:** [Quickstart](#quickstart-docker) · [Setup](#setup-windows-powershell) ·
+**Contents:** [Team](#team) · [Quickstart](#quickstart-docker) · [Setup](#setup-windows-powershell) ·
 [Data ingestion](#data-ingestion-phase-1) · [Processing](#pdf-processing-and-embeddings-phase-2) ·
 [RAG chatbot](#rag-chatbot-phase-3) · [Evaluation](#evaluation-phase-4) · [HDFS lake](#hdfs-data-lake) ·
 [Streaming](#streaming-ingestion) · [Web app](#web-application-phase-5) · [Tests](#tests) ·
@@ -55,6 +55,32 @@ flowchart LR
 | 3 | RAG engine with verified citations + terminal chatbot | Done |
 | 4 | System evaluation: data, retrieval, answers, performance | Done (see [docs/evaluation_report.md](docs/evaluation_report.md)) |
 | 5 | Web application: FastAPI backend + React chat with verifiable citations | Done |
+
+## Team
+
+Group 5. Lê Quang Minh (leader) and Nguyễn Võ Minh Nguyên.
+
+| Area | Lead | Support |
+|---|---|---|
+| Phase 0: repository, configuration, branch workflow | Lê Quang Minh | Nguyễn Võ Minh Nguyên |
+| Phase 1: ingestion from arXiv, OpenAlex, Semantic Scholar; deduplication; checkpoints | Lê Quang Minh | |
+| Phase 2: legal PDF download, extraction, cleaning, chunking, embeddings | Nguyễn Võ Minh Nguyên | Lê Quang Minh |
+| Phase 2: PySpark jobs and the Python vs Spark benchmark | Nguyễn Võ Minh Nguyên | |
+| Phase 3: RAG engine, citation validation, terminal chatbot, Ollama | Lê Quang Minh | |
+| PostgreSQL + pgvector in Docker, data migration | Lê Quang Minh | |
+| Phase 4: golden set, metrics, evaluation report | Nguyễn Võ Minh Nguyên | Lê Quang Minh |
+| Phase 5: FastAPI backend, rate limits, conversations | Lê Quang Minh | |
+| Phase 5: React interface, frontend and end-to-end tests | Nguyễn Võ Minh Nguyên | Lê Quang Minh |
+| Quality fixes: hybrid search, summary validation | Lê Quang Minh | Nguyễn Võ Minh Nguyên |
+| HDFS lake (Bronze / Silver / Gold) and the large corpus | Nguyễn Võ Minh Nguyên | |
+| Kafka + Spark Structured Streaming | Lê Quang Minh | Nguyễn Võ Minh Nguyên |
+| Cross-encoder reranker and relabelling of the large corpus | Nguyễn Võ Minh Nguyên | |
+| CI (GitHub Actions), Docker quickstart | Lê Quang Minh | |
+| Gemini provider, key rotation, model selector | Lê Quang Minh | |
+| Pull request review and merges, progress tracking | Lê Quang Minh | |
+| Report and README | Both | |
+| Slides | Nguyễn Võ Minh Nguyên | |
+| Release to `main`, clean Docker run, demo | Lê Quang Minh | Nguyễn Võ Minh Nguyên |
 
 ## Quickstart (Docker)
 
