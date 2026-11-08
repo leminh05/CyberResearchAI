@@ -19,6 +19,7 @@ class ChatRequest(BaseModel):
 
     question: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=MAX_QUESTION_CHARS)]
     conversation_id: UUID | None = None
+    provider: Annotated[str, StringConstraints(max_length=20)] | None = None
 
 
 class CitationOut(BaseModel):

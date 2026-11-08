@@ -12,6 +12,7 @@
 ![Hadoop HDFS](https://img.shields.io/badge/HDFS-data%20lake-66CCFF?logo=apachehadoop&logoColor=black)
 ![React](https://img.shields.io/badge/React-chat-61DAFB?logo=react&logoColor=black)
 ![Ollama](https://img.shields.io/badge/LLM-Ollama%20qwen2.5%3A7b-000000)
+![Gemini](https://img.shields.io/badge/LLM-Gemini%202.5%20Flash-4285F4?logo=googlegemini&logoColor=white)
 
 <img src="docs/images/chat.png" alt="The chat answering a Vietnamese question about prompt injection, with numbered references and verified quotes" width="820">
 
@@ -25,7 +26,7 @@
 | **Sources** | arXiv, OpenAlex and Semantic Scholar APIs, plus the Kaggle arXiv snapshot through an HDFS lake |
 | **Big Data path** | PySpark Bronze / Silver / Gold on HDFS, and Kafka with Spark Structured Streaming into the chatbot's database |
 | **Search** | Hybrid vector + full-text search, a cross-encoder reranker, at most 3 chunks per paper |
-| **Answers** | Local LLM (Ollama); a citation is shown only if its quote is found word for word in the cited chunk |
+| **Answers** | Gemini API (about 30 s) or local Ollama (2-3 min), picked in the chat header; a citation is shown only if its quote is found word for word in the cited chunk |
 | **Measured** | Large corpus: MRR 0.935, 0 unsupported claims shown, 7 of 8 unanswerable questions declined. Silver labels from AI judges; limits in the [report](docs/evaluation_report.md) |
 
 ```mermaid
@@ -34,7 +35,7 @@ flowchart LR
     A -->|crawler| K[[Kafka]] -->|Spark Structured<br/>Streaming| P
     S[Kaggle arXiv<br/>snapshot] --> H[(HDFS lake<br/>Bronze / Silver / Gold)] -->|PySpark| P
     P -->|hybrid search<br/>+ reranker| R[RAG engine]
-    R <-->|grounded prompt| L[Ollama LLM]
+    R <-->|grounded prompt| L[Gemini API<br/>or local Ollama]
     R -->|verified citations| W[FastAPI + React chat]
 ```
 
@@ -512,8 +513,13 @@ cd ..
 python main.py serve --provider ollama   # or gemini / claude with its key in .env
 ```
 
-Open http://127.0.0.1:8000. On this laptop an Ollama answer takes 1-3 minutes;
-off-topic questions are declined at once.
+Open http://127.0.0.1:8000. On this laptop an Ollama answer takes 1-3 minutes and a
+Gemini answer 20-40 s; off-topic questions are declined at once.
+
+**Choosing the model:** the `--provider` model is the default, and the header offers
+every other model that can run: Ollama always, Gemini and Claude only when their key
+is in `.env`. The choice is sent with each question, so it can change in the middle
+of a conversation; reloading the page goes back to the default.
 
 **Frontend development** (hot reload): keep `python main.py serve` running, run
 `npm run dev` in `frontend/` and open http://localhost:5173. Vite forwards `/api`
@@ -554,12 +560,12 @@ docker compose --profile web down
 ```
 
 The image builds the website and serves it from FastAPI, so there is one process
-and one origin. `WEB_PROVIDER` and `WEB_PORT` come from `.env`.
+and one origin. `WEB_PROVIDER` (default model: `ollama` or `gemini`) and `WEB_PORT` come from `.env`.
 
 **Before exposing it beyond this machine:**
 
 - The API has **no login**, which is why it binds to localhost by default. Anyone
-  who can reach it can spend your Claude API budget. Put a reverse proxy (Caddy,
+  who can reach it can spend your Claude API budget or Gemini quota. Put a reverse proxy (Caddy,
   nginx) with HTTPS and authentication in front of it.
 - Configure the proxy to limit body size. Behind a proxy all users share one rate
   limit, because the limiter sees the proxy's address.
@@ -642,6 +648,7 @@ src/cyberresearch/
     prompts.py                System prompt, evidence blocks, JSON schema
     llm.py                    Claude API client (structured output, fallback)
     ollama_client.py          Local Ollama client (same interface)
+    gemini_client.py          Gemini API client, rotates several keys on rate limits
     citations.py              Citation mapping and validation
     engine.py                 Retrieve -> gate -> generate -> validate
     chat.py                   Terminal chatbot

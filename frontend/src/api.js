@@ -25,11 +25,11 @@ async function request(path, options) {
   return body;
 }
 
-export function askQuestion(question, conversationId, signal) {
+export function askQuestion(question, conversationId, signal, provider) {
   return request("/api/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ question, conversation_id: conversationId }),
+    body: JSON.stringify({ question, conversation_id: conversationId, provider }),
     signal,
   });
 }

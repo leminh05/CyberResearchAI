@@ -240,6 +240,16 @@ button.secondary {
   border-color: var(--border);
 }
 
+.topbar-actions select {
+  padding: 4px 8px;
+  font: inherit;
+  font-size: 0.82rem;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
 button.chip {
   padding: 4px 10px;
   font-size: 0.82rem;
