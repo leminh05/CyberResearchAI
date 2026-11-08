@@ -26,25 +26,14 @@ def run_web_command(args: argparse.Namespace, settings: Settings) -> int:
     from cyberresearch.web.app import Services, create_app
 
     provider = args.provider or settings.rag.provider
-    if provider == "gemini":
-        from cyberresearch.rag.gemini_client import GeminiGenerator, key_is_set
-
-        if not key_is_set():
-            print("GEMINI_API_KEY is not set. Add it to .env (see .env.example), or use the free local model: --provider ollama")
-            return 2
-        generator = GeminiGenerator(settings.rag)
-    elif provider == "ollama":
-        from cyberresearch.rag.ollama_client import OllamaGenerator
-
-        generator = OllamaGenerator(settings.rag)
-    else:
-        from cyberresearch.rag.llm import ClaudeClient
-
-        if not settings.anthropic_api_key_present:
-            print("ANTHROPIC_API_KEY is not set. Add it to .env (see .env.example), "
-                  "or use the free local model: --provider ollama")
-            return 2
-        generator = ClaudeClient(settings.rag)
+    generator = _generator(provider, settings)
+    if generator is None:
+        key = "GEMINI_API_KEY" if provider == "gemini" else "ANTHROPIC_API_KEY"
+        print(f"{key} is not set. Add it to .env (see .env.example), or use the free local model: --provider ollama")
+        return 2
+    # The others the website can switch to; Ollama is always offered, hosted ones only with a key.
+    alternatives = {name: gen for name in ("ollama", "gemini", "claude")
+                    if name != provider and (gen := _generator(name, settings)) is not None}
 
     database_url = resolve_database_url(settings)
 
@@ -65,7 +54,22 @@ def run_web_command(args: argparse.Namespace, settings: Settings) -> int:
         print("frontend/dist not found: serving the API only. Build the website with `npm run build` in frontend/.")
     if args.host not in ("127.0.0.1", "localhost", "::1"):
         print(f"WARNING: listening on {args.host}. The API has no login; put authentication in front of it.")
-    app = create_app(Services(settings, provider, generator, embedder, connect), dist)
+    app = create_app(Services(settings, provider, generator, embedder, connect, alternatives), dist)
     # One process only: conversations and limits live in memory.
     uvicorn.run(app, host=args.host, port=args.port, log_level="info")
     return 0
+
+
+def _generator(name: str, settings: Settings):
+    """The answer generator for ``name``; None when its API key is missing."""
+    if name == "ollama":
+        from cyberresearch.rag.ollama_client import OllamaGenerator
+
+        return OllamaGenerator(settings.rag)
+    if name == "gemini":
+        from cyberresearch.rag.gemini_client import GeminiGenerator, key_is_set
+
+        return GeminiGenerator(settings.rag) if key_is_set() else None
+    from cyberresearch.rag.llm import ClaudeClient
+
+    return ClaudeClient(settings.rag) if settings.anthropic_api_key_present else None

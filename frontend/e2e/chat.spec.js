@@ -14,7 +14,8 @@ test("asks a question and gets an answer with a verifiable citation", async ({ p
   page.on("pageerror", (e) => problems.push(e.message));
 
   await page.goto("/");
-  await expect(page.getByText(/\d+ papers · scripted/)).toBeVisible();
+  await expect(page.getByText(/^\d+ papers$/)).toBeVisible();
+  await expect(page.getByRole("banner").getByText("scripted", { exact: true })).toBeVisible();
   await ask(page, QUESTION);
   await expect(page.getByRole("status")).toBeVisible();
 

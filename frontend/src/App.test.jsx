@@ -9,15 +9,17 @@ const json = (body, status = 200) => new Response(body === null ? null : JSON.st
 
 // Routes fetch by URL; chat replies are queued per test.
 let chatReplies;
+let health;
 let chatBodies;
 let deleted;
 
 beforeEach(() => {
   chatReplies = [];
+  health = HEALTH;
   chatBodies = [];
   deleted = [];
   vi.stubGlobal("fetch", vi.fn((url, options) => {
-    if (url === "/api/health") return Promise.resolve(json(HEALTH));
+    if (url === "/api/health") return Promise.resolve(json(health));
     if (options?.method === "DELETE") {
       deleted.push(url);
       return Promise.resolve(json(null, 204));
@@ -36,6 +38,19 @@ async function ask(user, text) {
 }
 
 describe("chat interface", () => {
+  it("sends the answer model picked in the header", async () => {
+    health = { ...HEALTH, providers: ["ollama", "gemini"] };
+    const user = userEvent.setup();
+    render(<App />);
+    const select = await screen.findByLabelText("Answer model");
+    expect(select).toHaveValue("ollama");
+    await user.selectOptions(select, "gemini");
+    chatReplies.push(json(answer()));
+    await ask(user, "What is IDS?");
+    await waitFor(() => expect(chatBodies).toHaveLength(1));
+    expect(chatBodies[0].provider).toBe("gemini");
+  });
+
   it("sends a question and shows history with the cited answer", async () => {
     const user = userEvent.setup();
     chatReplies.push(json(answer()));
@@ -44,7 +59,7 @@ describe("chat interface", () => {
 
     expect(screen.getByText("How are GNNs used?")).toBeInTheDocument();
     expect(await screen.findByRole("link", { name: "GNN Intrusion Detection" })).toBeInTheDocument();
-    expect(chatBodies[0]).toEqual({ question: "How are GNNs used?", conversation_id: null });
+    expect(chatBodies[0]).toEqual({ question: "How are GNNs used?", conversation_id: null, provider: "ollama" });
     expect(screen.getByLabelText("Your question")).toHaveValue("");
   });
 
@@ -125,7 +140,7 @@ describe("chat interface", () => {
     await screen.findByRole("alert");
     await user.click(screen.getByRole("button", { name: "Ask" }));
     await waitFor(() => expect(chatBodies).toHaveLength(3));
-    expect(chatBodies[2]).toEqual({ question: "Two?", conversation_id: null });
+    expect(chatBodies[2]).toEqual({ question: "Two?", conversation_id: null, provider: "ollama" });
   });
 
   it("clear removes messages, forgets the conversation on the server and starts fresh", async () => {

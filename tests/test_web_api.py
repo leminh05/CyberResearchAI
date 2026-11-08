@@ -54,9 +54,9 @@ def make_client(store, corpus, database_url):  # noqa: F811
         return psycopg.connect(database_url, autocommit=True, row_factory=dict_row,
                                options=f"-c search_path={schema},public")
 
-    def make(generator=None, web=None, connect_fn=connect, **kw):
+    def make(generator=None, web=None, connect_fn=connect, alternatives=None, **kw):
         settings = replace(load_settings(), rag=SETTINGS, web=web or WebSettings())
-        services = Services(settings, "ollama", generator or Generator(), HashEmbedder(), connect_fn)
+        services = Services(settings, "ollama", generator or Generator(), HashEmbedder(), connect_fn, alternatives or {})
         return TestClient(create_app(services, **kw), raise_server_exceptions=False)
 
     return make
@@ -235,3 +235,16 @@ def test_conversation_store_expires_and_evicts() -> None:
     assert conversations.get(second) is None and conversations.get(first) and conversations.get(third)
     now[0] = 20
     assert conversations.get(first) is None
+
+
+def test_each_question_can_use_another_provider(make_client) -> None:
+    local, hosted = Generator(), Generator()
+    client = make_client(local, alternatives={"gemini": hosted})
+    assert client.get("/api/health").json()["providers"] == ["ollama", "gemini"]
+
+    first = client.post("/api/chat", json={"question": IDS_TEXT, "provider": "gemini"}).json()
+    client.post("/api/chat", json={"question": IDS_TEXT, "conversation_id": first["conversation_id"]})
+    assert len(hosted.prompts) == 1 and len(local.prompts) == 1  # same conversation, default model again
+
+    wrong = client.post("/api/chat", json={"question": IDS_TEXT, "provider": "claude"})
+    assert wrong.status_code == 422 and "ollama, gemini" in wrong.json()["error"]["message"]

@@ -10,14 +10,12 @@ const EXAMPLES = [
   "How does concept drift affect network intrusion detectors?",
 ];
 
+const PROVIDER_NAMES = { ollama: "Ollama (local)", gemini: "Gemini", claude: "Claude" };
+
 function HealthBadge({ health }) {
   if (!health) return null;
   if (health.status === "ok") {
-    return (
-      <span className="health health-ok">
-        {health.papers} papers · {health.provider}
-      </span>
-    );
+    return <span className="health health-ok">{health.papers} papers</span>;
   }
   const problem = !health.database ? "Database unavailable" : "Answer model unavailable";
   return <span className="health health-bad">{problem}</span>;
@@ -29,6 +27,7 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [elapsed, setElapsed] = useState(0);
   const [health, setHealth] = useState(null);
+  const [provider, setProvider] = useState(null);
   const conversationId = useRef(null);
   const nextId = useRef(1);
   const inFlight = useRef(null);
@@ -36,7 +35,12 @@ export default function App() {
   const lastMessageRef = useRef(null);
 
   useEffect(() => {
-    getHealth().then(setHealth).catch(() => setHealth({ status: "unavailable", database: false }));
+    getHealth()
+      .then((body) => {
+        setHealth(body);
+        setProvider(body.provider);
+      })
+      .catch(() => setHealth({ status: "unavailable", database: false }));
   }, []);
 
   useEffect(() => {
@@ -64,7 +68,7 @@ export default function App() {
     const controller = new AbortController();
     inFlight.current = controller;
     try {
-      const answer = await askQuestion(question, conversationId.current, controller.signal);
+      const answer = await askQuestion(question, conversationId.current, controller.signal, provider ?? undefined);
       conversationId.current = answer.conversation_id;
       add({ role: "assistant", answer });
     } catch (error) {
@@ -106,6 +110,22 @@ export default function App() {
         </div>
         <div className="topbar-actions">
           <HealthBadge health={health} />
+          {health?.providers?.length > 1 ? (
+            <select
+              aria-label="Answer model"
+              value={provider ?? ""}
+              onChange={(event) => setProvider(event.target.value)}
+              disabled={loading}
+            >
+              {health.providers.map((name) => (
+                <option key={name} value={name}>
+                  {PROVIDER_NAMES[name] ?? name}
+                </option>
+              ))}
+            </select>
+          ) : (
+            provider && <span className="health health-ok">{PROVIDER_NAMES[provider] ?? provider}</span>
+          )}
           <button type="button" className="secondary" onClick={clearConversation} disabled={!messages.length && !loading}>
             Clear conversation
           </button>
@@ -146,7 +166,7 @@ export default function App() {
           <p className="loading" role="status">
             <span className="spinner" aria-hidden="true" />
             Searching papers and checking citations… {elapsed} s
-            {health?.provider === "ollama" && elapsed >= 5 && (
+            {provider === "ollama" && elapsed >= 5 && (
               <span className="loading-hint"> A local model can take a few minutes.</span>
             )}
           </p>

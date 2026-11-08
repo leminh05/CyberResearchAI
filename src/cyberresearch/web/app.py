@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import logging
 import threading
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable
 from uuid import UUID
@@ -43,6 +43,8 @@ class Services:
     generator: Any  # AnswerGenerator + QueryTranslator + is_ready()
     embedder: Any
     connect: Callable[[], psycopg.Connection]  # a new connection per request
+    # Other providers the user may pick per question, by name; ``provider`` is the default.
+    alternatives: dict[str, Any] = field(default_factory=dict)
 
 
 class ApiError(Exception):
@@ -56,6 +58,7 @@ def _error(status: int, code: str, message: str, headers: dict[str, str] | None 
 
 def create_app(services: Services, frontend_dist: Path | None = None) -> FastAPI:
     settings = services.settings
+    generators = {services.provider: services.generator, **services.alternatives}
     app = FastAPI(title="CyberResearchAI", version="1.0")
     limiter = RateLimiter(settings.web.rate_limit_per_minute)
     slots = threading.BoundedSemaphore(settings.web.max_concurrent_requests)
@@ -112,6 +115,7 @@ def create_app(services: Services, frontend_dist: Path | None = None) -> FastAPI
             "database": database_ok,
             "llm": llm_ok,
             "provider": services.provider,
+            "providers": list(generators),
             "papers": papers,
             "chunks": chunks,
         }
@@ -124,6 +128,9 @@ def create_app(services: Services, frontend_dist: Path | None = None) -> FastAPI
         wait = limiter.retry_after(request.client.host if request.client else "unknown")
         if wait:
             raise ApiError(429, "rate_limited", f"Too many questions. Try again in {wait} s.", wait)
+        generator = generators.get(body.provider or services.provider)
+        if generator is None:
+            raise ApiError(422, "invalid_request", f"provider: choose one of {', '.join(generators)}")
         if not slots.acquire(blocking=False):
             raise ApiError(503, "busy", "The server is answering other questions. Try again shortly.", 30)
         try:
@@ -138,6 +145,8 @@ def create_app(services: Services, frontend_dist: Path | None = None) -> FastAPI
             try:
                 with services.connect() as conn:
                     conversation.engine.retriever = Retriever(conn, services.embedder, settings.rag)
+                    # The model may change between questions of one conversation.
+                    conversation.engine.generator = conversation.engine.translator = generator
                     rag_response = conversation.engine.ask(body.question)
             except psycopg.Error as exc:
                 logger.error("chat: database error", extra={"error": type(exc).__name__})
