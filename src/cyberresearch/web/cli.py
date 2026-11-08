@@ -11,7 +11,7 @@ from cyberresearch.ingestion.storage import PostgresStore
 
 def add_web_commands(subparsers: argparse._SubParsersAction) -> None:
     serve = subparsers.add_parser("serve", help="web API and chat website")
-    serve.add_argument("--provider", choices=["claude", "ollama"], help="answer generator (default: settings.yaml)")
+    serve.add_argument("--provider", choices=["claude", "ollama", "gemini"], help="answer generator (default: settings.yaml)")
     # Loopback by default: the API has no user accounts.
     serve.add_argument("--host", default="127.0.0.1")
     serve.add_argument("--port", type=int, default=8000)
@@ -26,7 +26,14 @@ def run_web_command(args: argparse.Namespace, settings: Settings) -> int:
     from cyberresearch.web.app import Services, create_app
 
     provider = args.provider or settings.rag.provider
-    if provider == "ollama":
+    if provider == "gemini":
+        from cyberresearch.rag.gemini_client import GeminiGenerator, key_is_set
+
+        if not key_is_set():
+            print("GEMINI_API_KEY is not set. Add it to .env (see .env.example), or use the free local model: --provider ollama")
+            return 2
+        generator = GeminiGenerator(settings.rag)
+    elif provider == "ollama":
         from cyberresearch.rag.ollama_client import OllamaGenerator
 
         generator = OllamaGenerator(settings.rag)

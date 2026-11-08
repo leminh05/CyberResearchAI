@@ -309,24 +309,29 @@ What this does **not** show:
 
 ## RAG chatbot (Phase 3)
 
-Two interchangeable answer generators, selected with `rag.provider` in
+Three interchangeable answer generators, selected with `rag.provider` in
 `config/settings.yaml` or `--provider` on the command line:
 
 | Provider | Needs | Notes |
 |---|---|---|
 | `claude` (default) | `ANTHROPIC_API_KEY` in `.env` (billed per use) | `claude-opus-5-5`, structured output, refusal fallback |
 | `ollama` | [Ollama](https://ollama.com) running locally + `ollama pull qwen2.5:7b` | Free, offline. On this laptop (GTX 1650 Ti 4 GB, 32 GB RAM) about 2-3 min per answer; less accurate |
+| `gemini` | `GEMINI_API_KEY` in `.env` ([free tier](https://aistudio.google.com/apikey)) | `gemini-2.5-flash`, about 40 s per answer on the website. Questions and excerpts are sent to Google |
 
-Prompt, JSON schema and citation validation are the same for both, so a
+Prompt, JSON schema and citation validation are the same for all three, so a
 weaker local model cannot slip unverified citations through - its answers are
 downgraded instead. Ollama's context window is set explicitly
 (`rag.ollama.num_ctx`), and a prompt that fills it is rejected, because Ollama
-otherwise silently cuts long prompts. To keep models off drive C, set the user
+otherwise silently cuts long prompts. `GEMINI_API_KEY` may hold several keys
+separated by commas: on a rate limit the next key is used, and the chatbot waits
+only when every key is limited (and fails at once on a daily limit). The answer
+evaluation in `docs/evaluation_report.md` was run with Ollama, not Gemini. To keep models off drive C, set the user
 environment variable `OLLAMA_MODELS` (for example `D:\Ollama\models`) and
 restart Ollama before pulling.
 
 ```powershell
 python main.py chat --provider ollama                  # free local model
+python main.py chat --provider gemini                  # hosted, free tier
 python main.py chat                                    # interactive chatbot (Claude)
 python main.py chat --year-min 2025 --topic intrusion_detection
 python main.py ask "How are graph neural networks used for intrusion detection?"
@@ -504,7 +509,7 @@ cd frontend
 npm ci
 npm run build                            # creates frontend/dist, served by FastAPI
 cd ..
-python main.py serve --provider ollama   # or --provider claude with ANTHROPIC_API_KEY in .env
+python main.py serve --provider ollama   # or gemini / claude with its key in .env
 ```
 
 Open http://127.0.0.1:8000. On this laptop an Ollama answer takes 1-3 minutes;
@@ -561,7 +566,7 @@ and one origin. `WEB_PROVIDER` and `WEB_PORT` come from `.env`.
 - Run one server process only. Conversations and limits live in memory, so they
   reset on restart and are not shared between workers.
 
-Secrets (`ANTHROPIC_API_KEY`, `DATABASE_URL`) are read by the backend only. The
+Secrets (`ANTHROPIC_API_KEY`, `GEMINI_API_KEY`, `DATABASE_URL`) are read by the backend only. The
 browser never receives them, and the end-to-end suite checks this for the
 bundle and the health endpoint.
 
