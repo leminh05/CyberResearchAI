@@ -102,3 +102,24 @@ def test_failed_send_does_not_complete_the_window(store) -> None:
     assert result.status == "failed" and "broker gone" in result.error
     done = store.conn.execute("SELECT count(*) AS n FROM ingestion_checkpoints WHERE status = 'completed'").fetchone()
     assert done["n"] == 0
+
+
+def test_stream_produce_backfills_a_range_once_or_takes_new_papers():
+    import argparse
+
+    from cyberresearch.processing.cli import add_processing_commands, produce_round
+
+    class Pipeline:
+        def run_backfill(self, start, end, max_records):
+            return [("backfill", start, end, max_records)]
+
+        def run_daily(self, max_records):
+            return [("daily", max_records)]
+
+    parser = argparse.ArgumentParser()
+    add_processing_commands(parser.add_subparsers(dest="command"))
+    args = parser.parse_args(["stream-produce", "--start", "2024-01-01", "--end", "2024-06-30", "--max-records", "500"])
+    assert produce_round(Pipeline(), args) == [("backfill", date(2024, 1, 1), date(2024, 6, 30), 500)]
+    args = parser.parse_args(["stream-produce", "--start", "2024-01-01"])
+    assert produce_round(Pipeline(), args)[0][2] == date.today()
+    assert produce_round(Pipeline(), parser.parse_args(["stream-produce"])) == [("daily", None)]

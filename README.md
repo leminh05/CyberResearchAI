@@ -504,6 +504,13 @@ docker compose --profile app run --rm app stream-produce --sources arxiv --max-r
 docker compose --profile app run --rm app stream-consume --once
 ```
 
+To send older papers through the same path, give a date range. The crawler then runs once,
+window by window, and a second run continues where the first stopped:
+
+```powershell
+docker compose --profile app run --rm app stream-produce --start 2024-01-01 --max-records 2000
+```
+
 `--max-records` applies to each source and topic and is checked after each page, so one run
 can send up to a page more (100 records for arXiv and OpenAlex). Cutting a page short would
 make the saved cursor skip its remaining records.
