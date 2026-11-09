@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+from datetime import date
 from pathlib import Path
 
 from cyberresearch.config import PROJECT_ROOT, Settings
@@ -44,6 +45,8 @@ def add_processing_commands(subparsers: argparse._SubParsersAction) -> None:
     produce.add_argument("--topics", nargs="+", help="subset of topic keys")
     produce.add_argument("--max-records", type=int, help="max records per source/topic in one round; checked after each page (up to 100 records), so a run can exceed it by one page")
     produce.add_argument("--interval", type=int, help="repeat every N seconds (default: one round)")
+    produce.add_argument("--start", type=date.fromisoformat, help="backfill from this day (YYYY-MM-DD) instead of new papers; runs once, resumable")
+    produce.add_argument("--end", type=date.fromisoformat, help="last backfill day (default today)")
 
     consume = subparsers.add_parser("stream-consume", help="Kafka to Spark to PostgreSQL, running continuously")
     consume.add_argument("--once", action="store_true", help="handle the current backlog, then stop")
@@ -61,6 +64,13 @@ def _stores(settings: Settings):
     chunks = ChunkStore(base.conn, settings.embedding.dimension)
     chunks.init_schema()
     return base, chunks
+
+
+def produce_round(pipeline, args: argparse.Namespace) -> list:
+    """One crawler round: a backfill range when ``--start`` is given, otherwise the new papers."""
+    if args.start:
+        return pipeline.run_backfill(args.start, args.end or date.today(), args.max_records)
+    return pipeline.run_daily(args.max_records)
 
 
 def _streaming(args: argparse.Namespace, settings: Settings) -> int:
@@ -88,10 +98,10 @@ def _streaming(args: argparse.Namespace, settings: Settings) -> int:
             producer = KafkaProducer(bootstrap_servers=settings.streaming.bootstrap_servers, acks="all")
             store = KafkaStore(base.conn, producer, settings.streaming.topic)
             while True:
-                results = IngestionPipeline(store, clients, topics, settings.ingestion).run_daily(args.max_records)
+                results = produce_round(IngestionPipeline(store, clients, topics, settings.ingestion), args)
                 for r in results:
                     print(f"{r.source} {r.topic} {r.status} sent={r.counts['inserted']} {r.error or ''}", flush=True)
-                if not args.interval:
+                if not args.interval or args.start:
                     producer.close()
                     return 1 if any(r.status == "failed" for r in results) else 0
                 time.sleep(args.interval)
