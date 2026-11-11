@@ -31,6 +31,7 @@ logger = logging.getLogger(__name__)
 
 PAGE_PREFIX = "page:"
 MAX_BASIC_PAGING_RESULTS = 10_000
+PAPER_TYPES = "article|preprint|review|book-chapter|conference-paper|dissertation"
 
 
 class OpenAlexClient(BaseClient):
@@ -67,7 +68,12 @@ class OpenAlexClient(BaseClient):
     ) -> dict[str, Any]:
         params: dict[str, Any] = {
             "search": query,
-            "filter": f"from_publication_date:{start.isoformat()},to_publication_date:{end.isoformat()}",
+            # English papers only: datasets, paratext (front matter) and other
+            # non-paper types made up much of the noise in the 2026-11 backfill.
+            "filter": (
+                f"from_publication_date:{start.isoformat()},to_publication_date:{end.isoformat()}"
+                f",language:en,type:{PAPER_TYPES}"
+            ),
             "per-page": self.page_size,
         }
         if page_number is None:

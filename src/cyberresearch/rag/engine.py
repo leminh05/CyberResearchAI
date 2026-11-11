@@ -6,6 +6,7 @@ import logging
 from dataclasses import dataclass, field
 
 from cyberresearch.config import RagSettings
+from cyberresearch.ingestion.normalize import is_mostly_english
 from cyberresearch.rag.citations import ValidatedAnswer, validate_answer
 from cyberresearch.rag.llm import AnswerGenerator, LLMError, LLMResult, QueryTranslator
 from cyberresearch.rag.prompts import ANSWER_SCHEMA, SYSTEM_PROMPT, build_user_message
@@ -32,18 +33,6 @@ class RAGResponse:
     @property
     def best_similarity(self) -> float:
         return max((e.similarity for e in self.evidence), default=0.0)
-
-
-def is_mostly_english(text: str) -> bool:
-    """True if at least 95% of the letters are plain ASCII.
-
-    Vietnamese, for example, uses many accented letters (ư, ộ, ể ...), so a
-    Vietnamese question falls below the threshold.
-    """
-    letters = [ch for ch in text if ch.isalpha()]
-    if not letters:
-        return True
-    return sum(ch.isascii() for ch in letters) / len(letters) >= 0.95
 
 
 @dataclass

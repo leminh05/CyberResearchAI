@@ -34,7 +34,7 @@ def parse_message(value: bytes) -> tuple[str | None, PaperRecord]:
         fields["publication_date"] = date.fromisoformat(fields["publication_date"])
     record = PaperRecord(**fields)
     if not record.is_valid():
-        raise ValueError("record has no source id, title or identifier")
+        raise ValueError("record has no identifier, is not English or is not a paper")
     return data.get("topic"), record
 
 

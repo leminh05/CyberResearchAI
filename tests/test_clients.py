@@ -69,7 +69,10 @@ def test_openalex_request_params() -> None:
     client.fetch_page('"intrusion detection"', START, END, None)
     params = session.calls[0]["params"]
     assert params["cursor"] == "*"  # first page
-    assert params["filter"] == "from_publication_date:2024-01-01,to_publication_date:2024-01-31"
+    assert params["filter"] == (
+        "from_publication_date:2024-01-01,to_publication_date:2024-01-31"
+        ",language:en,type:article|preprint|review|book-chapter|conference-paper|dissertation"
+    )
     assert params["mailto"] == "me@x.org"
     assert params["api_key"] == "k"
 
