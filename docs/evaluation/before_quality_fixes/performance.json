@@ -1,0 +1,128 @@
+{
+  "meta": {
+    "measured_at": "2026-11-02T16:29:32+00:00",
+    "machine": "Windows 10, Intel64 Family 6 Model 165 Stepping 2, GenuineIntel",
+    "python": "3.11.0",
+    "embedding_model": "sentence-transformers/all-MiniLM-L6-v2"
+  },
+  "processing": {
+    "pdfs": 20,
+    "pages": 346,
+    "megabytes": 39.6,
+    "chunks": 890,
+    "extract_clean_chunk_s": 2.25,
+    "pages_per_second": 154.1,
+    "pdfs_per_second": 8.91,
+    "embedding_s": 20.95,
+    "chunks_embedded_per_second": 42.5,
+    "embedding_device": "cpu"
+  },
+  "search": {
+    "chunks_searched": 7691,
+    "queries": 40,
+    "repeats": 5,
+    "unit": "ms",
+    "query_embedding_ms": {
+      "n": 200,
+      "mean": 8.58,
+      "p50": 7.63,
+      "p95": 10.93,
+      "min": 5.86,
+      "max": 118.25
+    },
+    "retrieval_query_db_ms": {
+      "n": 200,
+      "mean": 38.96,
+      "p50": 37.84,
+      "p95": 48.1,
+      "min": 33.28,
+      "max": 70.1
+    },
+    "planner_uses_hnsw_by_default": false,
+    "hnsw_ef_search": 200,
+    "ann_top40_hnsw_ms": {
+      "n": 200,
+      "mean": 2.28,
+      "p50": 2.17,
+      "p95": 3.41,
+      "min": 1.44,
+      "max": 4.43
+    },
+    "ann_top40_exact_ms": {
+      "n": 200,
+      "mean": 19.83,
+      "p50": 19.46,
+      "p95": 22.64,
+      "min": 17.39,
+      "max": 28.88
+    },
+    "hnsw_recall_at_40_vs_exact": {
+      "n": 40,
+      "mean": 0.984,
+      "p50": 1.0,
+      "p95": 1.0,
+      "min": 0.8,
+      "max": 1.0
+    }
+  },
+  "python_vs_pyspark": {
+    "environment": {
+      "python": "3.11.0",
+      "os": "Windows 10",
+      "cpu_count": 12,
+      "spark_master": "local[*]",
+      "spark_driver_memory": "2g",
+      "repeats": 3,
+      "timing": "best of repeats, after one warm-up run"
+    },
+    "spark_startup_seconds": 4.2,
+    "base_records": 381,
+    "rows": [
+      {
+        "records": 1000,
+        "file_mb": 1.74,
+        "python_seconds": 0.083,
+        "python_peak_mb": 4.0,
+        "spark_seconds": 0.866,
+        "spark_jvm_used_mb": 437.1,
+        "after_dedup": 878,
+        "duplicates_removed": 122,
+        "results_match": true
+      },
+      {
+        "records": 10000,
+        "file_mb": 17.65,
+        "python_seconds": 0.824,
+        "python_peak_mb": 39.7,
+        "spark_seconds": 1.095,
+        "spark_jvm_used_mb": 212.0,
+        "after_dedup": 8094,
+        "duplicates_removed": 1906,
+        "results_match": true
+      },
+      {
+        "records": 100000,
+        "file_mb": 177.0,
+        "python_seconds": 8.989,
+        "python_peak_mb": 397.1,
+        "spark_seconds": 4.168,
+        "spark_jvm_used_mb": 505.0,
+        "after_dedup": 80580,
+        "duplicates_removed": 19420,
+        "results_match": true
+      },
+      {
+        "records": 300000,
+        "file_mb": 531.71,
+        "python_seconds": 26.74,
+        "python_peak_mb": 1194.9,
+        "spark_seconds": 8.788,
+        "spark_jvm_used_mb": 848.6,
+        "after_dedup": 242098,
+        "duplicates_removed": 57902,
+        "results_match": true
+      }
+    ]
+  },
+  "claude_api_latency": "not measured: no ANTHROPIC_API_KEY on this machine (see answers.json for Ollama)"
+}

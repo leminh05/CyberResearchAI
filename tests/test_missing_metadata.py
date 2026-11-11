@@ -50,6 +50,22 @@ def test_record_without_title_or_ids_is_invalid() -> None:
     assert PaperRecord(source="openalex", source_id="W1", title="Only a title").is_valid()
 
 
+def test_non_english_and_non_paper_records_are_invalid() -> None:
+    def valid(title: str, abstract: str | None = None) -> bool:
+        return PaperRecord(source="openalex", source_id="W1", title=title, abstract=abstract).is_valid()
+
+    assert valid("Intrusion detection with graph neural networks", "We propose a GNN-based IDS.")
+    assert valid("Certified robustness against adversarial patches")  # "certified" alone is fine
+    assert valid("A PDF malware detector")  # "pdf" inside a real title is fine
+    assert not valid("ІНФОРМАЦІЙНА БЕЗПЕКА ТА РИЗИКИ БЕЗДРОТОВИХ СЕНСОРНИХ МЕРЕЖ")
+    assert not valid("面向5G/6G云网融合架构的安全威胁建模与主动防御机制研究")
+    assert valid("Fine-tuning AraBERT for Arabic text", "Examples such as مرحبا بكم في المؤتمر are classified.")
+    assert valid("A policy model for provenance-based access control.pdf")
+    assert not valid("CheckPoint Check Point Certified Security Administrator CCSA R80 PDF")
+    assert not valid("Front Matter")
+    assert not valid("Fortinet NSE5_SSE_AD-7.6 PDF")
+
+
 def test_content_hash_is_stable_and_ignores_raw() -> None:
     a = PaperRecord(source="s", source_id="1", title="T", raw={"citations": 1})
     b = PaperRecord(source="s", source_id="1", title="T", raw={"citations": 99})

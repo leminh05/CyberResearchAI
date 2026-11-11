@@ -8,7 +8,7 @@ from dataclasses import asdict, dataclass, field
 from datetime import date
 from typing import Any
 
-from cyberresearch.ingestion.normalize import normalize_title
+from cyberresearch.ingestion.normalize import is_junk_title, is_mostly_english, normalize_title
 
 
 @dataclass
@@ -44,10 +44,14 @@ class PaperRecord:
         return normalize_title(self.title)
 
     def is_valid(self) -> bool:
-        """A record is usable if it has a title or at least one identifier."""
-        return bool(self.source_id) and bool(
+        """A record is usable if it has a title or at least one identifier,
+        and is an English paper: the embedding model is English-only, and
+        exam-dump PDFs and proceedings front matter are not papers."""
+        has_identity = bool(self.source_id) and bool(
             self.title or self.doi or self.arxiv_id or self.s2_paper_id or self.openalex_id
         )
+        # Title only: abstracts of English papers may quote other scripts.
+        return has_identity and is_mostly_english(self.title or "") and not is_junk_title(self.title)
 
     def content_hash(self) -> str:
         """Hash of the normalized metadata (not ``raw``).

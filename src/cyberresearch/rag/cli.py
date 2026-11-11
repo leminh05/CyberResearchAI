@@ -16,7 +16,7 @@ RAG_COMMANDS = {"chat", "ask", "rag-eval"}
 
 def add_rag_commands(subparsers: argparse._SubParsersAction) -> None:
     def add_filters(p: argparse.ArgumentParser) -> None:
-        p.add_argument("--provider", choices=["claude", "ollama"], help="answer generator (default: settings.yaml)")
+        p.add_argument("--provider", choices=["claude", "ollama", "gemini"], help="answer generator (default: settings.yaml)")
         p.add_argument("--year-min", type=int)
         p.add_argument("--year-max", type=int)
         p.add_argument("--topic", nargs="+", help="topic keys, e.g. intrusion_detection")
@@ -30,7 +30,7 @@ def add_rag_commands(subparsers: argparse._SubParsersAction) -> None:
     add_filters(ask)
     ev = subparsers.add_parser("rag-eval", help="run the test questions")
     ev.add_argument("--retrieval-only", action="store_true", help="no LLM calls; similarity and gate only")
-    ev.add_argument("--provider", choices=["claude", "ollama"], help="answer generator (default: settings.yaml)")
+    ev.add_argument("--provider", choices=["claude", "ollama", "gemini"], help="answer generator (default: settings.yaml)")
     ev.add_argument("--ids", nargs="+", help="run only these question ids")
 
 
@@ -47,6 +47,7 @@ def _filters(args: argparse.Namespace):
 
 def run_rag_command(args: argparse.Namespace, settings: Settings) -> int:
     from cyberresearch.processing.embeddings import SentenceTransformerEmbedder
+    from cyberresearch.processing.store import ChunkStore
     from cyberresearch.rag.retrieval import EmbeddingModelMismatch, Retriever
 
     # Windows consoles default to a legacy code page; answers may be Vietnamese.
@@ -55,6 +56,7 @@ def run_rag_command(args: argparse.Namespace, settings: Settings) -> int:
 
     store = PostgresStore.connect(resolve_database_url(settings))
     try:
+        ChunkStore(store.conn, settings.embedding.dimension).init_schema()  # databases older than hybrid search
         retriever = Retriever(store.conn, SentenceTransformerEmbedder(settings.embedding), settings.rag)
         try:
             retriever.check_embedding_model()
@@ -74,7 +76,15 @@ def run_rag_command(args: argparse.Namespace, settings: Settings) -> int:
         from cyberresearch.rag.engine import RAGEngine
 
         provider = getattr(args, "provider", None) or settings.rag.provider
-        if provider == "ollama":
+        if provider == "gemini":
+            from cyberresearch.rag.gemini_client import GeminiGenerator, key_is_set
+
+            if not key_is_set():
+                print("GEMINI_API_KEY is not set. Add it to .env (see .env.example), or use the free local model: --provider ollama")
+                return 2
+            generator = GeminiGenerator(settings.rag)
+            print(f"Using Gemini model {settings.rag.gemini_model}: questions and excerpts are sent to Google.")
+        elif provider == "ollama":
             from cyberresearch.rag.ollama_client import OllamaGenerator
 
             generator = OllamaGenerator(settings.rag)

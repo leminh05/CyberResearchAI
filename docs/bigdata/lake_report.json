@@ -1,0 +1,244 @@
+{
+  "source": "/app/data/raw/arxiv/arxiv-metadata-oai-snapshot.json",
+  "lake_root": "hdfs://namenode:8020/cyberresearch",
+  "layers": {
+    "bronze": {
+      "seconds": 83.3,
+      "records": 3233620,
+      "corrupt_records": 0,
+      "stored_mb": 2732.2,
+      "with_replicas_mb": 5464.4
+    },
+    "silver": {
+      "seconds": 31.6,
+      "records": 53943,
+      "rejected": {
+        "duplicate_title": 26,
+        "withdrawn": 7
+      },
+      "stored_mb": 52.8,
+      "with_replicas_mb": 105.6
+    },
+    "gold": {
+      "seconds": 8.5,
+      "by_year": [
+        {
+          "year": 1996,
+          "papers": 2,
+          "with_doi": 2
+        },
+        {
+          "year": 1998,
+          "papers": 6,
+          "with_doi": 2
+        },
+        {
+          "year": 1999,
+          "papers": 16,
+          "with_doi": 3
+        },
+        {
+          "year": 2000,
+          "papers": 10,
+          "with_doi": 0
+        },
+        {
+          "year": 2001,
+          "papers": 21,
+          "with_doi": 4
+        },
+        {
+          "year": 2002,
+          "papers": 25,
+          "with_doi": 3
+        },
+        {
+          "year": 2003,
+          "papers": 42,
+          "with_doi": 6
+        },
+        {
+          "year": 2004,
+          "papers": 73,
+          "with_doi": 15
+        },
+        {
+          "year": 2005,
+          "papers": 105,
+          "with_doi": 20
+        },
+        {
+          "year": 2006,
+          "papers": 134,
+          "with_doi": 16
+        },
+        {
+          "year": 2007,
+          "papers": 139,
+          "with_doi": 36
+        },
+        {
+          "year": 2008,
+          "papers": 201,
+          "with_doi": 38
+        },
+        {
+          "year": 2009,
+          "papers": 320,
+          "with_doi": 51
+        },
+        {
+          "year": 2010,
+          "papers": 493,
+          "with_doi": 103
+        },
+        {
+          "year": 2011,
+          "papers": 485,
+          "with_doi": 97
+        },
+        {
+          "year": 2012,
+          "papers": 647,
+          "with_doi": 123
+        },
+        {
+          "year": 2013,
+          "papers": 686,
+          "with_doi": 145
+        },
+        {
+          "year": 2014,
+          "papers": 785,
+          "with_doi": 198
+        },
+        {
+          "year": 2015,
+          "papers": 856,
+          "with_doi": 191
+        },
+        {
+          "year": 2016,
+          "papers": 1042,
+          "with_doi": 214
+        },
+        {
+          "year": 2017,
+          "papers": 1480,
+          "with_doi": 319
+        },
+        {
+          "year": 2018,
+          "papers": 2269,
+          "with_doi": 471
+        },
+        {
+          "year": 2019,
+          "papers": 3009,
+          "with_doi": 650
+        },
+        {
+          "year": 2020,
+          "papers": 3705,
+          "with_doi": 776
+        },
+        {
+          "year": 2021,
+          "papers": 3988,
+          "with_doi": 881
+        },
+        {
+          "year": 2022,
+          "papers": 4492,
+          "with_doi": 914
+        },
+        {
+          "year": 2023,
+          "papers": 5177,
+          "with_doi": 938
+        },
+        {
+          "year": 2024,
+          "papers": 6546,
+          "with_doi": 1068
+        },
+        {
+          "year": 2025,
+          "papers": 7923,
+          "with_doi": 1025
+        },
+        {
+          "year": 2026,
+          "papers": 9266,
+          "with_doi": 602
+        }
+      ],
+      "top_cross_categories": [
+        {
+          "category": "cs.LG",
+          "count": 13053
+        },
+        {
+          "category": "cs.AI",
+          "count": 8883
+        },
+        {
+          "category": "cs.CV",
+          "count": 3098
+        },
+        {
+          "category": "cs.NI",
+          "count": 2617
+        },
+        {
+          "category": "cs.SE",
+          "count": 2437
+        },
+        {
+          "category": "cs.DC",
+          "count": 2370
+        },
+        {
+          "category": "cs.CL",
+          "count": 2320
+        },
+        {
+          "category": "cs.CY",
+          "count": 2285
+        },
+        {
+          "category": "stat.ML",
+          "count": 2077
+        },
+        {
+          "category": "cs.IT",
+          "count": 1989
+        }
+      ],
+      "stored_mb": 0.0,
+      "with_replicas_mb": 0.0
+    }
+  },
+  "python_vs_spark": {
+    "task": "raw JSON to Silver result, one run each, same machine",
+    "records": 3233620,
+    "python_seconds": 249.2,
+    "spark_seconds": 88.5,
+    "python": {
+      "records": 3233620,
+      "kept": 53943,
+      "rejected": {
+        "withdrawn": 7,
+        "duplicate_title": 26
+      }
+    },
+    "spark": {
+      "kept": 53943,
+      "rejected": {
+        "withdrawn": 7,
+        "duplicate_title": 26
+      }
+    },
+    "identical": true
+  }
+}

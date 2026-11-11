@@ -1,0 +1,1293 @@
+{
+  "meta": {
+    "measured_at": "2026-11-06T17:40:01+00:00",
+    "machine": "Windows 10, Intel64 Family 6 Model 165 Stepping 2, GenuineIntel",
+    "python": "3.11.0",
+    "embedding_model": "sentence-transformers/all-MiniLM-L6-v2",
+    "provider": "ollama",
+    "llm_model": "qwen2.5:7b",
+    "rag": {
+      "top_k": 8,
+      "candidate_k": 40,
+      "max_chunks_per_paper": 3,
+      "min_similarity": 0.3,
+      "hnsw_ef_search": 200,
+      "exact_vector_search": true,
+      "hybrid_search": true,
+      "lexical_max_doc_fraction": 0.1,
+      "rrf_k": 60
+    }
+  },
+  "aggregate": {
+    "questions": 40,
+    "citation_validity_rate": 0.878,
+    "citations_total": 90,
+    "unsupported_claim_rate": 0.096,
+    "evidence_claims_total": 73,
+    "unsupported_claims_shown_to_user": 0,
+    "evidence_relevance": 0.762,
+    "completeness_keypoint_coverage": 0.606,
+    "answerable": {
+      "n": 30,
+      "answered": 19,
+      "partial": 10,
+      "abstained": 1,
+      "error_or_refused": 0,
+      "answer_rate": 0.967
+    },
+    "unanswerable": {
+      "n": 10,
+      "gated_before_llm": 4,
+      "abstained": 10,
+      "partial": 0,
+      "answered": 0,
+      "correct_abstention_rate": 1.0,
+      "hard_correct_abstention": "6/6"
+    },
+    "latency_s": {
+      "end_to_end_all": {
+        "n": 40,
+        "mean": 94.29,
+        "p50": 101.67,
+        "p95": 154.48,
+        "min": 0.07,
+        "max": 203.05
+      },
+      "end_to_end_with_llm": {
+        "n": 36,
+        "mean": 104.76,
+        "p50": 103.13,
+        "p95": 154.48,
+        "min": 50.72,
+        "max": 203.05
+      },
+      "llm_generation": {
+        "n": 36,
+        "mean": 104.58,
+        "p50": 103.04,
+        "p95": 154.39,
+        "min": 50.64,
+        "max": 199.94
+      },
+      "query_translation": {
+        "n": 1,
+        "mean": 3.01,
+        "p50": 3.01,
+        "p95": 3.01,
+        "min": 3.01,
+        "max": 3.01
+      },
+      "retrieval_and_validation": {
+        "n": 40,
+        "mean": 0.092,
+        "p50": 0.092,
+        "p95": 0.109,
+        "min": 0.058,
+        "max": 0.115
+      }
+    },
+    "output_tokens": {
+      "n": 36,
+      "mean": 426.0,
+      "p50": 412.0,
+      "p95": 721,
+      "min": 164,
+      "max": 896
+    }
+  },
+  "questions": [
+    {
+      "id": "gnn-ids",
+      "type": "answerable",
+      "hard": false,
+      "status": "answered",
+      "gated": false,
+      "best_similarity": 0.566,
+      "retrieval_query": "How are graph neural networks or graph structures used in network intrusion detection?",
+      "citations": 3,
+      "valid_citations": 3,
+      "evidence_claims": 3,
+      "unsupported_claims": 0,
+      "shown_claims": 4,
+      "cited_papers": [
+        "doi:10.1007/978-3-032-42929-2_19",
+        "doi:10.1145/3842721.3850227",
+        "doi:10.33050/corisinta.v3i2.177"
+      ],
+      "answer": "Graph Neural Networks (GNNs) are used in network intrusion detection to model and analyze the structural relationships between entities in the network. Provenance graphs, which capture interactions among system entities, are synthesized and analyzed using GNNs to detect complex attack patterns. GNNs are also employed in hybrid and ensemble architectures to improve detection performance and reduce false positives. Attention mechanisms and explainability components enhance the transparency of GNN-based models. Federated transfer learning with Attentional Graph Neural Networks (AGNN) is another approach that captures complex inter-device communication anomalies for zero-day botnet detection. Provenance graphs are constructed from system audit events and analyzed using GNNs to detect complex attack patterns. GNNs are used in hybrid and ensemble architectures to improve detection performance and reduce false positives. Attention mechanisms and explainability components enhance the transparency of GNN-based models. Federated transfer learning with AGNN captures complex inter-device communication anomalies for zero-day botnet detection.",
+      "warnings": [],
+      "cited_relevant_papers": 2,
+      "evidence_relevance": 0.667,
+      "completeness": 1.0,
+      "end_to_end_s": 138.02,
+      "llm_s": 137.93,
+      "translate_s": null,
+      "retrieval_and_validation_s": 0.081,
+      "usage": {
+        "input_tokens": 2897,
+        "output_tokens": 567
+      }
+    },
+    {
+      "id": "federated-ids",
+      "type": "answerable",
+      "hard": false,
+      "status": "answered",
+      "gated": false,
+      "best_similarity": 0.709,
+      "retrieval_query": "How is federated learning used for privacy-preserving intrusion detection?",
+      "citations": 3,
+      "valid_citations": 3,
+      "evidence_claims": 3,
+      "unsupported_claims": 0,
+      "shown_claims": 3,
+      "cited_papers": [
+        "doi:10.1109/jiot.2026.3710613",
+        "doi:10.1922/comdem.v3i6s.18811",
+        "doi:10.57159/jcmm.5.5.261304"
+      ],
+      "answer": "Federated learning (FL) is used for privacy-preserving intrusion detection in IoT and vehicular networks. AXLE combines FL with differential privacy to train models locally and aggregate updates securely. FHDL-ANIO integrates FL with adaptive optimization techniques to enhance detection accuracy while preserving privacy. Trust-Gated Federated Learning applies differential privacy and trust evaluation to ensure privacy and reliability in distributed systems. AXLE introduces a decentralized IDS framework that combines deep learning, federated learning, and differential privacy. FHDL-ANIO uses federated learning to train models independently of raw data, enhancing privacy and scalability. Trust-Gated Federated Learning applies differential privacy and trust evaluation to ensure privacy and reliability in distributed systems.",
+      "warnings": [],
+      "cited_relevant_papers": 2,
+      "evidence_relevance": 0.667,
+      "completeness": 0.75,
+      "end_to_end_s": 121.34,
+      "llm_s": 121.23,
+      "translate_s": null,
+      "retrieval_and_validation_s": 0.114,
+      "usage": {
+        "input_tokens": 3407,
+        "output_tokens": 477
+      }
+    },
+    {
+      "id": "iot-botnet",
+      "type": "answerable",
+      "hard": false,
+      "status": "answered",
+      "gated": false,
+      "best_similarity": 0.503,
+      "retrieval_query": "Which methods are proposed to detect botnets in IoT networks?",
+      "citations": 5,
+      "valid_citations": 5,
+      "evidence_claims": 5,
+      "unsupported_claims": 0,
+      "shown_claims": 5,
+      "cited_papers": [
+        "doi:10.1109/jiot.2026.3725337",
+        "doi:10.1145/3842721.3850227",
+        "doi:10.5121/ijci",
+        "doi:10.59190/stc.v7i1.424",
+        "doi:10.64388/ire1724506"
+      ],
+      "answer": "Federated learning with attentional graph neural networks (AGNN) is proposed for decentralized zero-day botnet detection. Unsupervised federated autoencoders are benchmarked for IoT botnet detection under non-IID heterogeneity and training-data contamination. Hybrid models combining convolutional networks and transient search techniques are proposed for botnet detection. A Hybrid SHAP–Fuzzy framework is proposed for robust IoT botnet detection. ThreatLens, an IoT honeypot, is introduced for monitoring and analyzing cyber-attacks.",
+      "warnings": [
+        "summary removed: it could not be checked against the verified citations"
+      ],
+      "cited_relevant_papers": 3,
+      "evidence_relevance": 0.6,
+      "completeness": 1.0,
+      "end_to_end_s": 156.99,
+      "llm_s": 156.9,
+      "translate_s": null,
+      "retrieval_and_validation_s": 0.091,
+      "usage": {
+        "input_tokens": 3477,
+        "output_tokens": 651
+      }
+    },
+    {
+      "id": "concept-drift",
+      "type": "answerable",
+      "hard": false,
+      "status": "partial",
+      "gated": false,
+      "best_similarity": 0.603,
+      "retrieval_query": "How do intrusion detection systems cope with concept drift in network traffic?",
+      "citations": 2,
+      "valid_citations": 1,
+      "evidence_claims": 2,
+      "unsupported_claims": 1,
+      "shown_claims": 1,
+      "cited_papers": [
+        "doi:10.33050/corisinta.v3i2.183"
+      ],
+      "answer": "Self-learning AI, as discussed in [1], continuously acquires new knowledge without complete retraining, enabling gradual updates from new network data.",
+      "warnings": [
+        "rejected citation E3: quote not found in the cited chunk",
+        "1 claim(s) removed because their citations could not be verified"
+      ],
+      "cited_relevant_papers": 0,
+      "evidence_relevance": 0.0,
+      "completeness": 0.25,
+      "end_to_end_s": 94.09,
+      "llm_s": 93.99,
+      "translate_s": null,
+      "retrieval_and_validation_s": 0.099,
+      "usage": {
+        "input_tokens": 2853,
+        "output_tokens": 383
+      }
+    },
+    {
+      "id": "xai-ids",
+      "type": "answerable",
+      "hard": false,
+      "status": "answered",
+      "gated": false,
+      "best_similarity": 0.67,
+      "retrieval_query": "How is explainable AI used to make intrusion detection decisions interpretable?",
+      "citations": 2,
+      "valid_citations": 2,
+      "evidence_claims": 2,
+      "unsupported_claims": 0,
+      "shown_claims": 2,
+      "cited_papers": [
+        "doi:10.1038/s41598-026-72775-6",
+        "doi:10.11591/ijict.v15i4.pp1726-1735"
+      ],
+      "answer": "Explainable AI (XAI) is used to make intrusion detection decisions interpretable by providing transparent reasoning. The SECURE framework integrates ensemble machine learning models, cybersecurity-inspired monitoring logic, and SHAP-based explainability to achieve accurate detection with transparent decision-making. The proposed cloud intrusion detection framework uses SHAP and LIME to understand the importance of features and explain predictions, supporting both global and local interpretations. This transparency is crucial for cloud environments to avoid false alarms and maintain confidence. The SECURE framework integrates ensemble machine learning models, cybersecurity-inspired monitoring logic, and SHAP-based explainability to achieve accurate detection with transparent decision-making. The proposed cloud intrusion detection framework uses SHAP and LIME to understand the importance of features and explain predictions, supporting both global and local interpretations.",
+      "warnings": [],
+      "cited_relevant_papers": 2,
+      "evidence_relevance": 1.0,
+      "completeness": 1.0,
+      "end_to_end_s": 107.57,
+      "llm_s": 107.48,
+      "translate_s": null,
+      "retrieval_and_validation_s": 0.094,
+      "usage": {
+        "input_tokens": 2954,
+        "output_tokens": 452
+      }
+    },
+    {
+      "id": "ddos",
+      "type": "answerable",
+      "hard": false,
+      "status": "partial",
+      "gated": false,
+      "best_similarity": 0.685,
+      "retrieval_query": "How are DDoS attacks detected with machine learning?",
+      "citations": 2,
+      "valid_citations": 1,
+      "evidence_claims": 2,
+      "unsupported_claims": 1,
+      "shown_claims": 4,
+      "cited_papers": [
+        "doi:10.11591/ijict.v15i4.pp1601-1613"
+      ],
+      "answer": "Alghazzawi et al. [5] proposed a hybrid CNN-BiLSTM model with chi-square test for feature selection, achieving 94.52% accuracy. SVM, KNN, and RF are effective in detecting DDoS attacks, with SVM showing the best performance in some studies. Hybrid models combining multiple techniques can further improve accuracy. Self-supervised attention frameworks are being explored for flow-based detection.",
+      "warnings": [
+        "rejected citation E3: quote not found in the cited chunk",
+        "1 claim(s) removed because their citations could not be verified"
+      ],
+      "cited_relevant_papers": 1,
+      "evidence_relevance": 1.0,
+      "completeness": 0.75,
+      "end_to_end_s": 120.86,
+      "llm_s": 120.75,
+      "translate_s": null,
+      "retrieval_and_validation_s": 0.109,
+      "usage": {
+        "input_tokens": 2996,
+        "output_tokens": 513
+      }
+    },
+    {
+      "id": "lm-threat-hunting",
+      "type": "answerable",
+      "hard": false,
+      "status": "partial",
+      "gated": false,
+      "best_similarity": 0.617,
+      "retrieval_query": "How can language models support threat hunting?",
+      "citations": 3,
+      "valid_citations": 2,
+      "evidence_claims": 3,
+      "unsupported_claims": 1,
+      "shown_claims": 2,
+      "cited_papers": [
+        "doi:10.1007/978-3-032-42929-2_14",
+        "doi:10.1007/978-3-032-42929-2_17"
+      ],
+      "answer": "The NL2KQL framework translates natural language queries to structured queries, improving threat hunting efficiency. Fine-tuning language models for cybersecurity can improve their performance on specific tasks, as demonstrated by the STINER system.",
+      "warnings": [
+        "rejected citation E7: quote not found in the cited chunk",
+        "1 claim(s) removed because their citations could not be verified"
+      ],
+      "cited_relevant_papers": 1,
+      "evidence_relevance": 0.5,
+      "completeness": 0.3333333333333333,
+      "end_to_end_s": 118.75,
+      "llm_s": 118.65,
+      "translate_s": null,
+      "retrieval_and_validation_s": 0.097,
+      "usage": {
+        "input_tokens": 3535,
+        "output_tokens": 451
+      }
+    },
+    {
+      "id": "rl-vulns",
+      "type": "answerable",
+      "hard": false,
+      "status": "answered",
+      "gated": false,
+      "best_similarity": 0.778,
+      "retrieval_query": "How is reinforcement learning applied to software vulnerability analysis?",
+      "citations": 3,
+      "valid_citations": 3,
+      "evidence_claims": 2,
+      "unsupported_claims": 0,
+      "shown_claims": 4,
+      "cited_papers": [
+        "doi:10.1007/978-3-032-43217-9_5"
+      ],
+      "answer": "Reinforcement learning (RL) is applied to software vulnerability analysis to address tasks such as vulnerability detection and exploration. The review identifies the use of RL algorithms like DQN, PPO, and actor-critic methods in this context. The research questions focus on the specific RL tasks, algorithms, code representations, and evaluation metrics used. The methodology follows PRISMA guidelines, emphasizing static analysis of C/C++ source code. Reinforcement learning is applied to software vulnerability analysis to address tasks such as vulnerability detection and exploration. The review identifies the use of RL algorithms like DQN, PPO, and actor-critic methods in this context. The research questions focus on the specific RL tasks, algorithms, code representations, and evaluation metrics used. The methodology follows PRISMA guidelines, emphasizing static analysis of C/C++ source code.",
+      "warnings": [],
+      "cited_relevant_papers": 1,
+      "evidence_relevance": 1.0,
+      "completeness": 0.75,
+      "end_to_end_s": 108.67,
+      "llm_s": 108.58,
+      "translate_s": null,
+      "retrieval_and_validation_s": 0.091,
+      "usage": {
+        "input_tokens": 3158,
+        "output_tokens": 411
+      }
+    },
+    {
+      "id": "phishing",
+      "type": "answerable",
+      "hard": false,
+      "status": "answered",
+      "gated": false,
+      "best_similarity": 0.637,
+      "retrieval_query": "How are machine learning and large language models used to detect phishing?",
+      "citations": 3,
+      "valid_citations": 3,
+      "evidence_claims": 3,
+      "unsupported_claims": 0,
+      "shown_claims": 3,
+      "cited_papers": [
+        "doi:10.1007/978-3-032-42929-2_17",
+        "doi:10.48175/ijarsct-40417",
+        "doi:10.5281/zenodo.23816502"
+      ],
+      "answer": "ML and LLMs are used to detect phishing through supervised and unsupervised learning, natural language processing, and feature extraction. Multimodal analysis, including text, URLs, visual content, and scripts, is used to provide a more comprehensive evaluation of suspicious activity. Fine-tuning small language models with explanations can improve their performance in detecting phishing emails.",
+      "warnings": [
+        "summary removed: it could not be checked against the verified citations"
+      ],
+      "cited_relevant_papers": 2,
+      "evidence_relevance": 0.667,
+      "completeness": 0.75,
+      "end_to_end_s": 101.97,
+      "llm_s": 101.86,
+      "translate_s": null,
+      "retrieval_and_validation_s": 0.115,
+      "usage": {
+        "input_tokens": 2960,
+        "output_tokens": 413
+      }
+    },
+    {
+      "id": "hijacked-agents",
+      "type": "answerable",
+      "hard": false,
+      "status": "answered",
+      "gated": false,
+      "best_similarity": 0.748,
+      "retrieval_query": "How can hijacked or compromised LLM agents be detected, and why do standard evaluations miss them?",
+      "citations": 3,
+      "valid_citations": 3,
+      "evidence_claims": 2,
+      "unsupported_claims": 0,
+      "shown_claims": 3,
+      "cited_papers": [
+        "arxiv:2610.41803"
+      ],
+      "answer": "Hijacked or compromised LLM agents can be detected through various methods such as rule, automaton, graph, sequence, and LLM-based detectors. However, standard evaluations often fail to adequately test these detectors due to issues like the lack of threshold-free measures, the absence of varying attack shares, and the use of test sets that do not accurately represent real-world conditions. Additionally, the rarity of attacks and the potential for distribution shifts can lead to false positives and degraded performance. Hijacked or compromised LLM agents can be detected using detectors that score tool call traces. Standard evaluations of these detectors are often inadequate. The rarity of attacks and distribution shifts can lead to false positives and degraded performance.  The evidence does not provide specific details on the exact methods of detection or the exact reasons why standard evaluations miss the detection of hijacked or compromised LLM agents, but it does highlight the issues with current evaluation practices.",
+      "warnings": [],
+      "cited_relevant_papers": 1,
+      "evidence_relevance": 1.0,
+      "completeness": 0.75,
+      "end_to_end_s": 106.3,
+      "llm_s": 106.19,
+      "translate_s": null,
+      "retrieval_and_validation_s": 0.108,
+      "usage": {
+        "input_tokens": 1702,
+        "output_tokens": 583
+      }
+    },
+    {
+      "id": "tool-call-privacy",
+      "type": "answerable",
+      "hard": false,
+      "status": "answered",
+      "gated": false,
+      "best_similarity": 0.717,
+      "retrieval_query": "What private information can leak from the tool calls of LLM agents?",
+      "citations": 2,
+      "valid_citations": 2,
+      "evidence_claims": 2,
+      "unsupported_claims": 0,
+      "shown_claims": 2,
+      "cited_papers": [
+        "arxiv:2610.41885"
+      ],
+      "answer": "Tool calls of LLM agents can reveal private information beyond explicit disclosures. Legitimate tool traces can expose behavioral signals such as religious beliefs and health conditions, which can be inferred by observers. Privacy inference attacks can recover private traits from indirect evidence in tool-call traces, even when the traces do not directly disclose the information. Tool calls can reveal private information beyond explicit disclosures. Privacy inference attacks can recover private traits from indirect evidence in tool-call traces.",
+      "warnings": [],
+      "cited_relevant_papers": 1,
+      "evidence_relevance": 1.0,
+      "completeness": 0.5,
+      "end_to_end_s": 67.8,
+      "llm_s": 67.71,
+      "translate_s": null,
+      "retrieval_and_validation_s": 0.09,
+      "usage": {
+        "input_tokens": 2770,
+        "output_tokens": 245
+      }
+    },
+    {
+      "id": "dp-training",
+      "type": "answerable",
+      "hard": false,
+      "status": "answered",
+      "gated": false,
+      "best_similarity": 0.812,
+      "retrieval_query": "How does differential privacy protect neural network training data against inference attacks?",
+      "citations": 4,
+      "valid_citations": 4,
+      "evidence_claims": 1,
+      "unsupported_claims": 0,
+      "shown_claims": 2,
+      "cited_papers": [
+        "doi:10.67231/483a7952",
+        "doi:10.70267/cai.v3n4.178185"
+      ],
+      "answer": "Differential privacy protects neural network training data against inference attacks by adding noise to the gradients during training. This noise limits the influence of individual training records on the model, making it difficult for an adversary to infer the presence or absence of specific records in the training dataset. The method, called DP-SGD, involves clipping the gradients to a preset threshold and then adding Gaussian noise before updating the model parameters. This approach ensures that the model's output distribution does not change significantly when a single training example is added or removed, thereby providing a formal privacy guarantee. Differential privacy protects neural network training data against inference attacks by adding noise to the gradients during training. This noise limits the influence of individual training records on the model, making it difficult for an adversary to infer the presence or absence of specific records in the training dataset.",
+      "warnings": [],
+      "cited_relevant_papers": 2,
+      "evidence_relevance": 1.0,
+      "completeness": 0.75,
+      "end_to_end_s": 113.82,
+      "llm_s": 113.73,
+      "translate_s": null,
+      "retrieval_and_validation_s": 0.094,
+      "usage": {
+        "input_tokens": 2095,
+        "output_tokens": 577
+      }
+    },
+    {
+      "id": "zero-trust",
+      "type": "answerable",
+      "hard": false,
+      "status": "answered",
+      "gated": false,
+      "best_similarity": 0.683,
+      "retrieval_query": "What are the key components of zero-trust security architectures?",
+      "citations": 1,
+      "valid_citations": 1,
+      "evidence_claims": 1,
+      "unsupported_claims": 0,
+      "shown_claims": 1,
+      "cited_papers": [
+        "doi:10.66414/mls.978-1-0666009-1-5_4"
+      ],
+      "answer": "Zero-trust security architectures consist of a policy engine, policy administrator, and policy enforcement point, which operate independently of network location. These components continuously verify identity for every request, treating every interaction as untrusted, which aligns with the distributed and multi-tenant nature of cloud workloads. Zero-trust security architectures include a policy engine, policy administrator, and policy enforcement point.",
+      "warnings": [],
+      "cited_relevant_papers": 0,
+      "evidence_relevance": 0.0,
+      "completeness": 0.5,
+      "end_to_end_s": 59.12,
+      "llm_s": 59.03,
+      "translate_s": null,
+      "retrieval_and_validation_s": 0.09,
+      "usage": {
+        "input_tokens": 2857,
+        "output_tokens": 189
+      }
+    },
+    {
+      "id": "pqc",
+      "type": "answerable",
+      "hard": false,
+      "status": "answered",
+      "gated": false,
+      "best_similarity": 0.674,
+      "retrieval_query": "How is post-quantum cryptography combined with intrusion detection or TLS?",
+      "citations": 2,
+      "valid_citations": 2,
+      "evidence_claims": 2,
+      "unsupported_claims": 0,
+      "shown_claims": 2,
+      "cited_papers": [
+        "doi:10.1109/jiot.2026.3718816"
+      ],
+      "answer": "Post-quantum cryptography is used in intrusion detection systems to enhance security against quantum computing threats. PQC is being developed to handle cryptographic breaches by large-scale quantum computers, as seen in TLS 1.3.",
+      "warnings": [
+        "summary removed: it could not be checked against the verified citations"
+      ],
+      "cited_relevant_papers": 1,
+      "evidence_relevance": 1.0,
+      "completeness": 0.25,
+      "end_to_end_s": 94.7,
+      "llm_s": 94.61,
+      "translate_s": null,
+      "retrieval_and_validation_s": 0.088,
+      "usage": {
+        "input_tokens": 3089,
+        "output_tokens": 363
+      }
+    },
+    {
+      "id": "blockchain-ids",
+      "type": "answerable",
+      "hard": false,
+      "status": "answered",
+      "gated": false,
+      "best_similarity": 0.637,
+      "retrieval_query": "How is blockchain used to make intrusion detection more trustworthy?",
+      "citations": 3,
+      "valid_citations": 3,
+      "evidence_claims": 3,
+      "unsupported_claims": 0,
+      "shown_claims": 3,
+      "cited_papers": [
+        "doi:10.21203/rs.3.rs-10843028/v1"
+      ],
+      "answer": "Blockchain is used in intrusion detection to enhance trustworthiness by ensuring tamper-evident records and cryptographic consensus. BAg-IDS, a blockchain-enabled agentic AI architecture, integrates blockchain to secure decision-making processes. Specifically, it uses blockchain for immutable decision audit, where every certified verdict and vote is tamper-evident, and for decentralized cryptographic consensus, ensuring no single trusted aggregator certifies a decision. BAg-IDS uses blockchain for tamper-evident records and cryptographic consensus. Blockchain ensures every certified verdict and vote is tamper-evident. Decentralized cryptographic consensus prevents a single trusted aggregator from certifying a decision.",
+      "warnings": [],
+      "cited_relevant_papers": 1,
+      "evidence_relevance": 1.0,
+      "completeness": 0.5,
+      "end_to_end_s": 84.56,
+      "llm_s": 84.47,
+      "translate_s": null,
+      "retrieval_and_validation_s": 0.098,
+      "usage": {
+        "input_tokens": 2812,
+        "output_tokens": 332
+      }
+    },
+    {
+      "id": "honeypot",
+      "type": "answerable",
+      "hard": false,
+      "status": "answered",
+      "gated": false,
+      "best_similarity": 0.597,
+      "retrieval_query": "How are honeypots used to monitor attacks and collect threat intelligence?",
+      "citations": 2,
+      "valid_citations": 2,
+      "evidence_claims": 2,
+      "unsupported_claims": 0,
+      "shown_claims": 2,
+      "cited_papers": [
+        "doi:10.64388/ire1724506"
+      ],
+      "answer": "Honeypots are used to monitor attacks and collect threat intelligence by attracting and recording unauthorized access attempts. For example, ThreatLens, a low-cost IoT honeypot built on an ESP32 microcontroller, exposes decoys and traps to attract attackers. Captured events are then forwarded to a backend for storage and analysis, providing an analyst with a live view of activity through a React dashboard. ThreatLens, a low-cost IoT honeypot built directly on an ESP32 microcontroller, exposes a decoy router login portal, a live ultrasonic-sensor status page, a simulated Telnet shell, and a set of common-service reconnaissance traps to attract and record unauthorized access attempts. Captured events are queued on-device and forwarded over Wi-Fi to a Flask ingestion service, which stores them in a SQLite database alongside a sliding-window rule for flagging brute-force behaviour, and a React dashboard polls the same backend to give an analyst a live view of activity.",
+      "warnings": [],
+      "cited_relevant_papers": 1,
+      "evidence_relevance": 1.0,
+      "completeness": 0.5,
+      "end_to_end_s": 94.39,
+      "llm_s": 94.29,
+      "translate_s": null,
+      "retrieval_and_validation_s": 0.099,
+      "usage": {
+        "input_tokens": 2690,
+        "output_tokens": 397
+      }
+    },
+    {
+      "id": "cti-extraction",
+      "type": "answerable",
+      "hard": false,
+      "status": "partial",
+      "gated": false,
+      "best_similarity": 0.713,
+      "retrieval_query": "How can cyber threat intelligence be extracted automatically from social media posts?",
+      "citations": 5,
+      "valid_citations": 5,
+      "evidence_claims": 2,
+      "unsupported_claims": 0,
+      "shown_claims": 3,
+      "cited_papers": [
+        "doi:10.1007/978-3-032-42929-2_14"
+      ],
+      "answer": "Cyber threat intelligence (CTI) can be extracted from social media posts, but existing datasets are primarily derived from formal vendor reports, making them less effective for social media CTI. The STINER project addresses this by developing a semantic extraction pipeline that can handle the informal and high-velocity nature of social media language, including hashtags and implicit attribution. This approach is validated by comparing its findings against official reports. Existing CTI resources are derived almost exclusively from formal, long-form vendor reports and APT whitepapers, making them less effective for social media CTI. The STINER project develops a semantic extraction pipeline that can handle the informal and high-velocity nature of social media language, including hashtags and implicit attribution. The STINER project validates its findings by comparing them against official reports, demonstrating its capability as a leading indicator for emerging campaigns.  The evidence does not provide specific details on the technical implementation of the semantic extraction pipeline or the exact methods used for training models on social media data.",
+      "warnings": [],
+      "cited_relevant_papers": 1,
+      "evidence_relevance": 1.0,
+      "completeness": 0.6666666666666666,
+      "end_to_end_s": 150.47,
+      "llm_s": 150.38,
+      "translate_s": null,
+      "retrieval_and_validation_s": 0.09,
+      "usage": {
+        "input_tokens": 2363,
+        "output_tokens": 747
+      }
+    },
+    {
+      "id": "apt",
+      "type": "answerable",
+      "hard": false,
+      "status": "partial",
+      "gated": false,
+      "best_similarity": 0.653,
+      "retrieval_query": "How are advanced persistent threats detected and prioritised?",
+      "citations": 3,
+      "valid_citations": 3,
+      "evidence_claims": 3,
+      "unsupported_claims": 0,
+      "shown_claims": 3,
+      "cited_papers": [
+        "doi:10.1007/978-3-032-42929-2_14",
+        "doi:10.57159/jcmm.5.5.261067"
+      ],
+      "answer": "Advanced persistent threats (APTs) are detected using machine learning and deep learning approaches that analyze network telemetry. RiskCal-APT uses a decision-centric framework to detect APTs by combining multiple telemetry views, which helps in identifying uncertain or evasive activities. STINER-DarkBERT, another framework, leverages social media data to detect APTs earlier than institutional reporting, providing an early warning advantage. APTs are detected using machine learning and deep learning approaches that analyze network telemetry. RiskCal-APT uses a decision-centric framework to detect APTs by combining multiple telemetry views. STINER-DarkBERT leverages social media data to detect APTs earlier than institutional reporting.  The evidence does not provide a detailed explanation of how APTs are prioritized after detection.",
+      "warnings": [],
+      "cited_relevant_papers": 1,
+      "evidence_relevance": 0.5,
+      "completeness": 0.25,
+      "end_to_end_s": 103.88,
+      "llm_s": 103.79,
+      "translate_s": null,
+      "retrieval_and_validation_s": 0.09,
+      "usage": {
+        "input_tokens": 2548,
+        "output_tokens": 463
+      }
+    },
+    {
+      "id": "edge-ids",
+      "type": "answerable",
+      "hard": false,
+      "status": "partial",
+      "gated": false,
+      "best_similarity": 0.62,
+      "retrieval_query": "How can intrusion detection models run on resource-constrained IoT edge devices?",
+      "citations": 2,
+      "valid_citations": 2,
+      "evidence_claims": 2,
+      "unsupported_claims": 0,
+      "shown_claims": 2,
+      "cited_papers": [
+        "doi:10.5121/ijci",
+        "doi:10.5281/zenodo.23838114"
+      ],
+      "answer": "[1] discusses the trade-offs between classification performance, model size, and numerical quantization, showing that size reduction does not always improve deployment efficiency. [2] mentions the use of recent IoT trace datasets, which are more relevant for training models that can predict new attacks in the IoT ecosystem.  The papers do not provide specific solutions for running models on edge devices, such as optimization techniques or hardware recommendations.",
+      "warnings": [
+        "summary removed: it could not be checked against the verified citations"
+      ],
+      "cited_relevant_papers": 1,
+      "evidence_relevance": 0.5,
+      "completeness": 0.25,
+      "end_to_end_s": 102.38,
+      "llm_s": 102.29,
+      "translate_s": null,
+      "retrieval_and_validation_s": 0.097,
+      "usage": {
+        "input_tokens": 2977,
+        "output_tokens": 415
+      }
+    },
+    {
+      "id": "iiot-ids",
+      "type": "answerable",
+      "hard": false,
+      "status": "answered",
+      "gated": false,
+      "best_similarity": 0.716,
+      "retrieval_query": "Which deep learning models detect multi-class intrusions in industrial IoT networks?",
+      "citations": 2,
+      "valid_citations": 2,
+      "evidence_claims": 2,
+      "unsupported_claims": 0,
+      "shown_claims": 2,
+      "cited_papers": [
+        "doi:10.65890/race.v2i3.206"
+      ],
+      "answer": "The proposed framework uses LSTM networks for detecting multi-class intrusions in industrial IoT networks. It integrates SMOTE during the training phase to address class imbalance and improve the detection of minority attack classes. The proposed framework uses LSTM networks for detecting multi-class intrusions in industrial IoT networks. The framework integrates SMOTE during the training phase to address class imbalance and improve the detection of minority attack classes.",
+      "warnings": [],
+      "cited_relevant_papers": 1,
+      "evidence_relevance": 1.0,
+      "completeness": 1.0,
+      "end_to_end_s": 72.3,
+      "llm_s": 72.21,
+      "translate_s": null,
+      "retrieval_and_validation_s": 0.097,
+      "usage": {
+        "input_tokens": 2985,
+        "output_tokens": 252
+      }
+    },
+    {
+      "id": "synthetic-data",
+      "type": "answerable",
+      "hard": false,
+      "status": "partial",
+      "gated": false,
+      "best_similarity": 0.633,
+      "retrieval_query": "Can synthetic or generated data replace real data for training security detection models?",
+      "citations": 3,
+      "valid_citations": 3,
+      "evidence_claims": 2,
+      "unsupported_claims": 0,
+      "shown_claims": 2,
+      "cited_papers": [
+        "doi:10.1007/978-3-032-42929-2_19",
+        "doi:10.53799/sa1d7q88"
+      ],
+      "answer": "Synthetic data did not replace real data in the medical no-show and Adult datasets. SLTE (Synthetic Label Trust Evaluation) is useful only when substitution cannot be avoided and its benefit is confirmed on held-out real data. For intrusion detection, data imbalance in training datasets limits the generalizability of machine learning-based PIDS, and synthetic data can help address this issue, but more research is needed to ensure its effectiveness. Synthetic data did not replace real data in the medical no-show and Adult datasets. Data imbalance in training datasets limits the generalizability of machine learning-based PIDS.  The evidence does not fully address whether synthetic data can replace real data for training security detection models in all scenarios. It only provides insights from specific datasets and does not cover a wide range of security detection models or real-world deployment scenarios.",
+      "warnings": [],
+      "cited_relevant_papers": 2,
+      "evidence_relevance": 1.0,
+      "completeness": 0.75,
+      "end_to_end_s": 117.82,
+      "llm_s": 117.71,
+      "translate_s": null,
+      "retrieval_and_validation_s": 0.104,
+      "usage": {
+        "input_tokens": 3167,
+        "output_tokens": 478
+      }
+    },
+    {
+      "id": "prompt-injection",
+      "type": "answerable",
+      "hard": false,
+      "status": "insufficient_evidence",
+      "gated": false,
+      "best_similarity": 0.701,
+      "retrieval_query": "How can chatbots be protected against prompt injection and data leakage?",
+      "citations": 3,
+      "valid_citations": 0,
+      "evidence_claims": 2,
+      "unsupported_claims": 2,
+      "shown_claims": 0,
+      "cited_papers": [],
+      "answer": "No statement in the generated answer could be verified against the retrieved papers, so none is shown.",
+      "warnings": [
+        "rejected citation E1: quote not found in the cited chunk",
+        "rejected citation E1: quote not found in the cited chunk",
+        "rejected citation E6: quote not found in the cited chunk",
+        "no evidence claim could be verified against the retrieved chunks"
+      ],
+      "cited_relevant_papers": 0,
+      "evidence_relevance": null,
+      "completeness": 0.0,
+      "end_to_end_s": 101.38,
+      "llm_s": 101.28,
+      "translate_s": null,
+      "retrieval_and_validation_s": 0.098,
+      "usage": {
+        "input_tokens": 3017,
+        "output_tokens": 408
+      }
+    },
+    {
+      "id": "vehicle-security",
+      "type": "answerable",
+      "hard": false,
+      "status": "partial",
+      "gated": false,
+      "best_similarity": 0.71,
+      "retrieval_query": "Which security threats affect autonomous and connected vehicles, and how are they mitigated?",
+      "citations": 5,
+      "valid_citations": 2,
+      "evidence_claims": 2,
+      "unsupported_claims": 1,
+      "shown_claims": 2,
+      "cited_papers": [
+        "doi:10.1109/jiot.2026.3710613",
+        "doi:10.38124/ijisrt/26oct1249"
+      ],
+      "answer": "Mitigation strategies include developing robust cybersecurity protocols, using machine learning-based algorithms for secure routing, and implementing a hybrid model of RNN and CNN. Federated learning and differential privacy techniques can enhance intrusion detection systems, providing scalable, privacy-aware, and resilient security measures.",
+      "warnings": [
+        "rejected citation E3: quote not found in the cited chunk",
+        "rejected citation E4: quote not found in the cited chunk",
+        "rejected citation E8: quote not found in the cited chunk",
+        "1 claim(s) removed because their citations could not be verified"
+      ],
+      "cited_relevant_papers": 2,
+      "evidence_relevance": 1.0,
+      "completeness": 0.25,
+      "end_to_end_s": 154.48,
+      "llm_s": 154.39,
+      "translate_s": null,
+      "retrieval_and_validation_s": 0.093,
+      "usage": {
+        "input_tokens": 2727,
+        "output_tokens": 721
+      }
+    },
+    {
+      "id": "ids-datasets",
+      "type": "answerable",
+      "hard": false,
+      "status": "answered",
+      "gated": false,
+      "best_similarity": 0.635,
+      "retrieval_query": "Which benchmark datasets are used to evaluate network intrusion detection models?",
+      "citations": 2,
+      "valid_citations": 2,
+      "evidence_claims": 2,
+      "unsupported_claims": 0,
+      "shown_claims": 2,
+      "cited_papers": [
+        "doi:10.33050/corisinta.v3i2.187"
+      ],
+      "answer": "The evidence indicates that several benchmark datasets are used to evaluate network intrusion detection models. These include CIC-IDS2017, UNSW-NB15, and NSL-KDD. The CICIDS2017 dataset is particularly large, with 3,000,000 samples and 78 features, while UNSW-NB15 includes 2,540,044 instances with 49 features. The NSL-KDD dataset contains 125,973 instances with 41 features. CIC-IDS2017, UNSW-NB15, and NSL-KDD are used as benchmark datasets for evaluating network intrusion detection models. CICIDS2017 is a large dataset with 3,000,000 samples and 78 features.",
+      "warnings": [],
+      "cited_relevant_papers": 0,
+      "evidence_relevance": 0.0,
+      "completeness": 0.75,
+      "end_to_end_s": 124.38,
+      "llm_s": 124.28,
+      "translate_s": null,
+      "retrieval_and_validation_s": 0.098,
+      "usage": {
+        "input_tokens": 4158,
+        "output_tokens": 415
+      }
+    },
+    {
+      "id": "adversarial-iot",
+      "type": "answerable",
+      "hard": false,
+      "status": "answered",
+      "gated": false,
+      "best_similarity": 0.732,
+      "retrieval_query": "How do adversarial attacks threaten machine-learning-based IoT security systems?",
+      "citations": 2,
+      "valid_citations": 2,
+      "evidence_claims": 2,
+      "unsupported_claims": 0,
+      "shown_claims": 2,
+      "cited_papers": [
+        "doi:10.1109/jiot.2026.3714987",
+        "doi:10.5281/zenodo.23800182"
+      ],
+      "answer": "Adversarial attacks pose significant threats to machine-learning-based IoT security systems. These attacks can exploit vulnerabilities in the ML pipeline, such as data poisoning, model manipulation, and intelligent attack automation. The security of these systems is further challenged by the lack of robust evaluation under adversarial conditions, which is often overlooked in current evaluation practices. Adversarial attacks can exploit vulnerabilities in the ML pipeline, such as data poisoning, model manipulation, and intelligent attack automation. Current evaluation practices prioritize benchmark accuracy more consistently than deployment-oriented dimensions such as adversarial robustness.",
+      "warnings": [],
+      "cited_relevant_papers": 1,
+      "evidence_relevance": 0.5,
+      "completeness": 0.5,
+      "end_to_end_s": 89.93,
+      "llm_s": 89.83,
+      "translate_s": null,
+      "retrieval_and_validation_s": 0.099,
+      "usage": {
+        "input_tokens": 2777,
+        "output_tokens": 366
+      }
+    },
+    {
+      "id": "insider-threat",
+      "type": "answerable",
+      "hard": false,
+      "status": "answered",
+      "gated": false,
+      "best_similarity": 0.527,
+      "retrieval_query": "How are insider threats detected?",
+      "citations": 2,
+      "valid_citations": 2,
+      "evidence_claims": 2,
+      "unsupported_claims": 0,
+      "shown_claims": 2,
+      "cited_papers": [
+        "doi:10.21203/rs.3.rs-10843028/v1",
+        "doi:10.22214/ijraset.2026.85406"
+      ],
+      "answer": "Insider threats are detected using various methods. One approach involves a hybrid deep learning system that uses Long Short-Term Memory (LSTM) networks and Autoencoders. The LSTM model captures temporal patterns in user activity, while the Autoencoder learns normal behavior and detects anomalies through reconstruction errors. Another method involves a blockchain-enabled architecture (BAg-IDS) that decomposes detection across cooperating agents, ensuring that no single compromised participant can poison the shared view or forge alerts. Additionally, advanced machine learning techniques are employed to detect anomalies in network flow sessions and event sequences, which can help in identifying insider threats. A hybrid deep learning system using LSTM networks and Autoencoders can detect insider threats by capturing temporal patterns and learning normal behavior. Blockchain-enabled architectures like BAg-IDS can detect insider threats by decomposing detection across cooperating agents, ensuring no single compromised participant can poison the shared view.",
+      "warnings": [],
+      "cited_relevant_papers": 1,
+      "evidence_relevance": 0.5,
+      "completeness": 0.6666666666666666,
+      "end_to_end_s": 93.84,
+      "llm_s": 93.76,
+      "translate_s": null,
+      "retrieval_and_validation_s": 0.083,
+      "usage": {
+        "input_tokens": 3263,
+        "output_tokens": 346
+      }
+    },
+    {
+      "id": "token-theft",
+      "type": "answerable",
+      "hard": false,
+      "status": "answered",
+      "gated": false,
+      "best_similarity": 0.719,
+      "retrieval_query": "How can authentication tokens be stolen from on-device AI assistants?",
+      "citations": 1,
+      "valid_citations": 1,
+      "evidence_claims": 1,
+      "unsupported_claims": 0,
+      "shown_claims": 2,
+      "cited_papers": [
+        "doi:10.1007/978-3-032-42929-2_9"
+      ],
+      "answer": "Authentication tokens can be stolen from on-device AI assistants through a cross-device token replay attack, as demonstrated by the Serpent attack. This attack allows an attacker to steal tokens from a victim's device and use them on a different device, with usage rate-limited against the victim. The Serpent attack is a practical cross-device token replay attack against Apple Intelligence that allows the attacker to steal access tokens from the victim’s device and utilize them on a different device. The stolen tokens are rate-limited against the victim, meaning the attacker can use the stolen tokens but the usage is counted towards the victim’s bill.",
+      "warnings": [],
+      "cited_relevant_papers": 1,
+      "evidence_relevance": 1.0,
+      "completeness": 1.0,
+      "end_to_end_s": 50.72,
+      "llm_s": 50.64,
+      "translate_s": null,
+      "retrieval_and_validation_s": 0.087,
+      "usage": {
+        "input_tokens": 1432,
+        "output_tokens": 266
+      }
+    },
+    {
+      "id": "ebpf",
+      "type": "answerable",
+      "hard": false,
+      "status": "partial",
+      "gated": false,
+      "best_similarity": 0.679,
+      "retrieval_query": "How do eBPF or XDP based network functions process and match packets efficiently?",
+      "citations": 1,
+      "valid_citations": 1,
+      "evidence_claims": 1,
+      "unsupported_claims": 0,
+      "shown_claims": 2,
+      "cited_papers": [
+        "doi:10.21203/rs.3.rs-11234466/v1"
+      ],
+      "answer": "eBPF and XDP enable efficient packet processing and matching by moving rule checks into the kernel, reducing the overhead of userspace processing. The paper focuses on optimizing port-range rule management and matching-path measurement in eBPF-based network functions, which can reduce average scan steps from 100 to 1 in the core scenario, and lower average latency. eBPF and XDP enable efficient packet processing and matching by moving rule checks into the kernel, reducing the overhead of userspace processing. The paper focuses on optimizing port-range rule management and matching-path measurement in eBPF-based network functions, which can reduce average scan steps from 100 to 1 in the core scenario, and lower average latency.  The provided evidence does not fully cover the efficiency of eBPF or XDP in general, but focuses specifically on port-range rule management and matching-path measurement in eBPF-based network functions.",
+      "warnings": [],
+      "cited_relevant_papers": 1,
+      "evidence_relevance": 1.0,
+      "completeness": 1.0,
+      "end_to_end_s": 77.18,
+      "llm_s": 77.08,
+      "translate_s": null,
+      "retrieval_and_validation_s": 0.092,
+      "usage": {
+        "input_tokens": 1804,
+        "output_tokens": 397
+      }
+    },
+    {
+      "id": "payment-fraud",
+      "type": "answerable",
+      "hard": false,
+      "status": "partial",
+      "gated": false,
+      "best_similarity": 0.807,
+      "retrieval_query": "How is deep learning used to detect payment and transaction fraud?",
+      "citations": 4,
+      "valid_citations": 3,
+      "evidence_claims": 4,
+      "unsupported_claims": 1,
+      "shown_claims": 3,
+      "cited_papers": [
+        "doi:10.11591/ijict.v15i4.pp1768-1776"
+      ],
+      "answer": "These models help in real-time fraud detection and address class imbalance issues. Explainable AI techniques, such as SHAP, are integrated to improve transparency and compliance. Federated learning allows institutions to train models without sharing customer data, enhancing privacy.",
+      "warnings": [
+        "rejected citation E1: quote not found in the cited chunk",
+        "1 claim(s) removed because their citations could not be verified"
+      ],
+      "cited_relevant_papers": 1,
+      "evidence_relevance": 1.0,
+      "completeness": 0.5,
+      "end_to_end_s": 106.32,
+      "llm_s": 106.23,
+      "translate_s": null,
+      "retrieval_and_validation_s": 0.095,
+      "usage": {
+        "input_tokens": 3211,
+        "output_tokens": 415
+      }
+    },
+    {
+      "id": "vi-federated-ids",
+      "type": "answerable",
+      "hard": false,
+      "status": "answered",
+      "gated": false,
+      "best_similarity": 0.694,
+      "retrieval_query": "How is federated learning used in intrusion detection?",
+      "citations": 5,
+      "valid_citations": 4,
+      "evidence_claims": 4,
+      "unsupported_claims": 0,
+      "shown_claims": 5,
+      "cited_papers": [
+        "doi:10.1145/3842721.3850111",
+        "doi:10.59190/stc.v7i1.424"
+      ],
+      "answer": "Học liên kết được sử dụng trong phát hiện xâm nhập để cải thiện khả năng phát hiện mà không cần chia sẻ dữ liệu gốc. Trong một hệ thống, các thiết bị IoT chỉ học từ các cuộc tấn công mà chúng đã trải qua. Federated Learning (FL) cho phép cải thiện một bộ phát hiện chung mà không cần trao đổi dữ liệu gốc giữa các thiết bị. Federated Learning cũng được sử dụng để phát hiện botnet không có nhãn dữ liệu, nhưng FedAvg không vượt trội so với đào tạo cục bộ và FedProx chỉ giúp ngăn chặn sự suy giảm trong một số trường hợp. Federated Learning có thể giảm rủi ro về quyền riêng tư và cải thiện khả năng phát hiện xâm nhập, nhưng vẫn có những thách thức về hiệu suất và độ trễ.  Các nghiên cứu không đề cập đến việc học liên kết được áp dụng như thế nào trong các hệ thống phát hiện xâm nhập cụ thể, chỉ đề cập đến việc FL được sử dụng trong phát hiện botnet và phát hiện xâm nhập chung.",
+      "warnings": [
+        "rejected citation E6: quote not found in the cited chunk",
+        "summary removed: it could not be checked against the verified citations"
+      ],
+      "cited_relevant_papers": 2,
+      "evidence_relevance": 1.0,
+      "completeness": 0.25,
+      "end_to_end_s": 203.05,
+      "llm_s": 199.94,
+      "translate_s": 3.01,
+      "retrieval_and_validation_s": 0.093,
+      "usage": {
+        "input_tokens": 3253,
+        "output_tokens": 896
+      }
+    },
+    {
+      "id": "out-cake",
+      "type": "unanswerable",
+      "hard": false,
+      "status": "insufficient_evidence",
+      "gated": true,
+      "best_similarity": 0.194,
+      "retrieval_query": "What is the best recipe for a chocolate cake?",
+      "citations": 0,
+      "valid_citations": 0,
+      "evidence_claims": 0,
+      "unsupported_claims": 0,
+      "shown_claims": 0,
+      "cited_papers": [],
+      "answer": "The indexed papers contain no passage that matches this question closely enough (best similarity 0.19 < 0.30). No answer is given rather than an unsupported one.",
+      "warnings": [],
+      "end_to_end_s": 0.08,
+      "llm_s": null,
+      "translate_s": null,
+      "retrieval_and_validation_s": 0.082,
+      "usage": {}
+    },
+    {
+      "id": "out-football",
+      "type": "unanswerable",
+      "hard": false,
+      "status": "insufficient_evidence",
+      "gated": true,
+      "best_similarity": 0.204,
+      "retrieval_query": "Who won the 2022 FIFA World Cup final?",
+      "citations": 0,
+      "valid_citations": 0,
+      "evidence_claims": 0,
+      "unsupported_claims": 0,
+      "shown_claims": 0,
+      "cited_papers": [],
+      "answer": "The indexed papers contain no passage that matches this question closely enough (best similarity 0.20 < 0.30). No answer is given rather than an unsupported one.",
+      "warnings": [],
+      "end_to_end_s": 0.08,
+      "llm_s": null,
+      "translate_s": null,
+      "retrieval_and_validation_s": 0.079,
+      "usage": {}
+    },
+    {
+      "id": "out-riemann",
+      "type": "unanswerable",
+      "hard": false,
+      "status": "insufficient_evidence",
+      "gated": true,
+      "best_similarity": 0.201,
+      "retrieval_query": "Outline a proof of the Riemann hypothesis.",
+      "citations": 0,
+      "valid_citations": 0,
+      "evidence_claims": 0,
+      "unsupported_claims": 0,
+      "shown_claims": 0,
+      "cited_papers": [],
+      "answer": "The indexed papers contain no passage that matches this question closely enough (best similarity 0.20 < 0.30). No answer is given rather than an unsupported one.",
+      "warnings": [],
+      "end_to_end_s": 0.07,
+      "llm_s": null,
+      "translate_s": null,
+      "retrieval_and_validation_s": 0.069,
+      "usage": {}
+    },
+    {
+      "id": "out-ibuprofen",
+      "type": "unanswerable",
+      "hard": false,
+      "status": "insufficient_evidence",
+      "gated": true,
+      "best_similarity": 0.219,
+      "retrieval_query": "What is the maximum daily dose of ibuprofen for adults?",
+      "citations": 0,
+      "valid_citations": 0,
+      "evidence_claims": 0,
+      "unsupported_claims": 0,
+      "shown_claims": 0,
+      "cited_papers": [],
+      "answer": "The indexed papers contain no passage that matches this question closely enough (best similarity 0.22 < 0.30). No answer is given rather than an unsupported one.",
+      "warnings": [],
+      "end_to_end_s": 0.07,
+      "llm_s": null,
+      "translate_s": null,
+      "retrieval_and_validation_s": 0.07,
+      "usage": {}
+    },
+    {
+      "id": "hard-notpetya",
+      "type": "unanswerable",
+      "hard": true,
+      "status": "out_of_scope",
+      "gated": false,
+      "best_similarity": 0.477,
+      "retrieval_query": "How did the NotPetya malware spread inside Maersk's network in 2017?",
+      "citations": 2,
+      "valid_citations": 2,
+      "evidence_claims": 2,
+      "unsupported_claims": 0,
+      "shown_claims": 0,
+      "cited_papers": [],
+      "answer": "The provided evidence does not discuss the spread of NotPetya malware inside Maersk's network in 2017. The excerpts focus on STINER's automated extraction of strategic cyber threat intelligence, ransomware campaigns, and the evaluation of machine learning models for intrusion detection. They do not contain any information about NotPetya or its spread within Maersk.  The question asks about NotPetya's spread inside Maersk's network in 2017, which is not covered by the provided evidence. The evidence focuses on ransomware campaigns and intrusion detection systems, but does not address NotPetya or Maersk specifically.",
+      "warnings": [],
+      "end_to_end_s": 114.85,
+      "llm_s": 114.79,
+      "translate_s": null,
+      "retrieval_and_validation_s": 0.058,
+      "usage": {
+        "input_tokens": 2643,
+        "output_tokens": 515
+      }
+    },
+    {
+      "id": "hard-log4shell",
+      "type": "unanswerable",
+      "hard": true,
+      "status": "insufficient_evidence",
+      "gated": false,
+      "best_similarity": 0.512,
+      "retrieval_query": "Which CVE identifier and CVSS score were assigned to the Log4Shell vulnerability?",
+      "citations": 1,
+      "valid_citations": 1,
+      "evidence_claims": 1,
+      "unsupported_claims": 0,
+      "shown_claims": 0,
+      "cited_papers": [],
+      "answer": "The provided excerpts do not contain specific information about the CVE identifier and CVSS score assigned to the Log4Shell vulnerability.  The excerpts do not provide details on the specific CVE identifier and CVSS score for the Log4Shell vulnerability, as they focus on a broader dataset of CVE records without specifying individual vulnerabilities like Log4Shell.",
+      "warnings": [],
+      "end_to_end_s": 85.03,
+      "llm_s": 84.94,
+      "translate_s": null,
+      "retrieval_and_validation_s": 0.089,
+      "usage": {
+        "input_tokens": 3679,
+        "output_tokens": 262
+      }
+    },
+    {
+      "id": "hard-kerberos",
+      "type": "unanswerable",
+      "hard": true,
+      "status": "insufficient_evidence",
+      "gated": false,
+      "best_similarity": 0.318,
+      "retrieval_query": "What is the default lifetime of a Kerberos ticket-granting ticket in Active Directory?",
+      "citations": 2,
+      "valid_citations": 2,
+      "evidence_claims": 0,
+      "unsupported_claims": 0,
+      "shown_claims": 1,
+      "cited_papers": [
+        "doi:10.1007/978-3-032-42929-2_9"
+      ],
+      "answer": "The evidence does not provide information about the default lifetime of a Kerberos ticket-granting ticket in Active Directory. The evidence discusses token validation and expiry in the context of Apple's intelligence systems, but does not mention Kerberos or Active Directory.  The evidence does not cover Kerberos or Active Directory systems, which are outside the scope of the provided excerpts.",
+      "warnings": [],
+      "end_to_end_s": 77.53,
+      "llm_s": 77.44,
+      "translate_s": null,
+      "retrieval_and_validation_s": 0.085,
+      "usage": {
+        "input_tokens": 3108,
+        "output_tokens": 270
+      }
+    },
+    {
+      "id": "hard-stuxnet",
+      "type": "unanswerable",
+      "hard": true,
+      "status": "out_of_scope",
+      "gated": false,
+      "best_similarity": 0.32,
+      "retrieval_query": "How did the Stuxnet worm manipulate Siemens PLCs controlling uranium centrifuges?",
+      "citations": 2,
+      "valid_citations": 2,
+      "evidence_claims": 1,
+      "unsupported_claims": 0,
+      "shown_claims": 1,
+      "cited_papers": [
+        "doi:10.54254/2753-7102/2026.38506"
+      ],
+      "answer": "The provided evidence does not discuss the Stuxnet worm or its manipulation of Siemens PLCs. The excerpts are about blockchain-enabled intrusion detection systems, data falsification in agriculture, legal analysis of cyber operations, and process monitoring techniques. The Tallinn Manual 2.0 states that a State must not conduct cyber operations that violate the sovereignty of another State.",
+      "warnings": [],
+      "end_to_end_s": 105.57,
+      "llm_s": 105.49,
+      "translate_s": null,
+      "retrieval_and_validation_s": 0.086,
+      "usage": {
+        "input_tokens": 3697,
+        "output_tokens": 366
+      }
+    },
+    {
+      "id": "hard-bgp",
+      "type": "unanswerable",
+      "hard": true,
+      "status": "insufficient_evidence",
+      "gated": false,
+      "best_similarity": 0.414,
+      "retrieval_query": "How are BGP prefix hijacking attacks detected in real time by Internet service providers?",
+      "citations": 0,
+      "valid_citations": 0,
+      "evidence_claims": 0,
+      "unsupported_claims": 0,
+      "shown_claims": 1,
+      "cited_papers": [],
+      "answer": "The provided evidence does not discuss BGP prefix hijacking attacks or their real-time detection by Internet service providers. The evidence focuses on various cybersecurity topics such as intrusion detection, machine learning for network security, and stock market manipulation detection, but does not address BGP prefix hijacking attacks.  The evidence does not cover BGP prefix hijacking attacks or their real-time detection mechanisms.",
+      "warnings": [],
+      "end_to_end_s": 59.57,
+      "llm_s": 59.47,
+      "translate_s": null,
+      "retrieval_and_validation_s": 0.091,
+      "usage": {
+        "input_tokens": 3246,
+        "output_tokens": 164
+      }
+    },
+    {
+      "id": "hard-wpa3",
+      "type": "unanswerable",
+      "hard": true,
+      "status": "out_of_scope",
+      "gated": false,
+      "best_similarity": 0.327,
+      "retrieval_query": "Which Dragonblood attacks break the WPA3 SAE handshake?",
+      "citations": 0,
+      "valid_citations": 0,
+      "evidence_claims": 0,
+      "unsupported_claims": 0,
+      "shown_claims": 1,
+      "cited_papers": [],
+      "answer": "The provided evidence does not discuss Dragonblood attacks or WPA3 SAE handshake vulnerabilities. The papers focus on network intrusion detection, machine learning models, and benchmarking datasets. The papers do not mention Dragonblood attacks or WPA3 SAE handshake vulnerabilities.  The evidence does not address the specific topic of Dragonblood attacks or WPA3 SAE handshake vulnerabilities.",
+      "warnings": [],
+      "end_to_end_s": 91.79,
+      "llm_s": 91.69,
+      "translate_s": null,
+      "retrieval_and_validation_s": 0.097,
+      "usage": {
+        "input_tokens": 5177,
+        "output_tokens": 177
+      }
+    }
+  ]
+}

@@ -25,6 +25,11 @@ _URL_LIKE = re.compile(
     re.IGNORECASE,
 )
 _EVIDENCE_MARKER = re.compile(r"\s*[\[(]\s*E\d+(\s*,\s*E\d+)*\s*[\])]")
+_BARE_EVIDENCE_ID = re.compile(r"\bE\d+\b")
+
+NOTHING_VERIFIED_MESSAGE = (
+    "No statement in the generated answer could be verified against the retrieved papers, so none is shown."
+)
 
 
 def normalize_for_match(text: str) -> str:
@@ -146,12 +151,19 @@ def validate_answer(data: dict[str, Any], evidence: list[Evidence], min_quote_wo
     elif not any(c.kind == "evidence" for c in claims):
         status = "insufficient_evidence"
         warnings.append("no evidence claim could be verified against the retrieved chunks")
-        summary = ""
+        # Reasoning built on evidence that failed validation is not shown either.
+        rejected += claims
+        claims = []
+        summary = NOTHING_VERIFIED_MESSAGE
     elif rejected:
         status = "partial"
         # The summary may repeat a rejected claim, so only verified claims are shown.
         summary = ""
         warnings.append(f"{len(rejected)} claim(s) removed because their citations could not be verified")
+    elif summary and (_BARE_EVIDENCE_ID.search(summary) or any(not c.valid for claim in claims for c in claim.citations)):
+        # The summary has no citations of its own and may repeat what was rejected.
+        summary = ""
+        warnings.append("summary removed: it could not be checked against the verified citations")
 
     # Number references only now, so the list has no gaps from rejected claims.
     references: dict[str, Reference] = {}
@@ -160,6 +172,16 @@ def validate_answer(data: dict[str, Any], evidence: list[Evidence], min_quote_wo
             if citation.evidence_id not in references:
                 references[citation.evidence_id] = Reference(len(references) + 1, evidence_by_id[citation.evidence_id])
             citation.reference = references[citation.evidence_id]
+
+    # Readers cannot resolve the model's internal ids ("as discussed in E7").
+    def readable_id(match: re.Match[str]) -> str:
+        evidence_id = match.group(0)
+        if evidence_id in references:
+            return f"[{references[evidence_id].number}]"
+        return "a retrieved passage" if evidence_id in evidence_by_id else evidence_id
+
+    for claim in claims:
+        claim.statement = _BARE_EVIDENCE_ID.sub(readable_id, claim.statement)
 
     return ValidatedAnswer(
         status=status,

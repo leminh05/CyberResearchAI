@@ -46,3 +46,7 @@ CREATE TABLE IF NOT EXISTS paper_chunks (
 CREATE INDEX IF NOT EXISTS idx_paper_chunks_paper ON paper_chunks (paper_id);
 -- HNSW = approximate nearest-neighbour index for fast cosine-similarity search.
 CREATE INDEX IF NOT EXISTS idx_paper_chunks_embedding ON paper_chunks USING hnsw (embedding vector_cosine_ops);
+-- Stored full-text vector: the lexical half of hybrid search.
+ALTER TABLE paper_chunks ADD COLUMN IF NOT EXISTS text_search tsvector
+    GENERATED ALWAYS AS (to_tsvector('english', text)) STORED;
+CREATE INDEX IF NOT EXISTS idx_paper_chunks_text_search ON paper_chunks USING gin (text_search);

@@ -85,7 +85,10 @@ class EmbeddingSettings:
 class RagSettings:
     """Retrieval and answer-generation settings (Phase 3)."""
 
-    provider: str = "claude"  # claude | ollama
+    provider: str = "claude"  # claude | ollama | gemini
+    gemini_model: str = "gemini-2.5-flash"
+    gemini_max_tokens: int = 8192
+    gemini_timeout_seconds: float = 120.0
     ollama_base_url: str = "http://127.0.0.1:11434"
     ollama_model: str = "qwen2.5:7b"
     ollama_num_ctx: int = 12288
@@ -96,7 +99,13 @@ class RagSettings:
     max_tokens: int = 16000
     top_k: int = 8
     candidate_k: int = 40
+    exact_vector_search: bool = True
     hnsw_ef_search: int = 200
+    rerank: bool = False
+    rerank_model: str = "cross-encoder/ms-marco-MiniLM-L-6-v2"
+    hybrid_search: bool = True
+    lexical_max_doc_fraction: float = 0.10
+    rrf_k: int = 60
     max_chunks_per_paper: int = 3
     min_similarity: float = 0.30
     weak_similarity: float = 0.45
@@ -112,6 +121,28 @@ class SparkSettings:
     master: str = "local[*]"
     driver_memory: str = "2g"
     shuffle_partitions: int = 8
+    lake_root: str = "hdfs://namenode:8020/cyberresearch"
+    hdfs_replication: int = 2
+
+
+@dataclass(frozen=True)
+class StreamingSettings:
+    """Kafka and Spark Structured Streaming."""
+
+    bootstrap_servers: str = "kafka:9092"
+    topic: str = "papers.raw"
+    max_offsets_per_trigger: int = 200
+    trigger_seconds: int = 30
+
+
+@dataclass(frozen=True)
+class WebSettings:
+    """Limits of the web API (Phase 5)."""
+
+    rate_limit_per_minute: int = 10
+    max_concurrent_requests: int = 2
+    max_conversations: int = 1000
+    conversation_ttl_minutes: int = 60
 
 
 @dataclass(frozen=True)
@@ -133,6 +164,10 @@ class Settings:
     embedding: EmbeddingSettings = field(default_factory=EmbeddingSettings)
     spark: SparkSettings = field(default_factory=SparkSettings)
     rag: RagSettings = field(default_factory=RagSettings)
+    web: WebSettings = field(default_factory=WebSettings)
+    streaming: StreamingSettings = field(default_factory=StreamingSettings)
+    # Compose points this at the database the website serves; database_url stays the evaluated corpus.
+    stream_database_url: str | None = None
     # Only whether a key exists; the SDK reads the key itself from the environment.
     anthropic_api_key_present: bool = False
 
@@ -141,8 +176,10 @@ def _rag_settings(raw: dict[str, Any]) -> RagSettings:
     values = dict(raw)
     for key, value in (values.pop("ollama", None) or {}).items():
         values[f"ollama_{key}"] = value
-    if values.get("provider", "claude") not in ("claude", "ollama"):
-        raise ValueError("rag.provider must be 'claude' or 'ollama'")
+    for key, value in (values.pop("gemini", None) or {}).items():
+        values[f"gemini_{key}"] = value
+    if values.get("provider", "claude") not in ("claude", "ollama", "gemini"):
+        raise ValueError("rag.provider must be 'claude', 'ollama' or 'gemini'")
     if "exclude_sections" in values:
         values["exclude_sections"] = tuple(values["exclude_sections"])
     # Inside Docker, Ollama runs on the host (host.docker.internal), not localhost.
@@ -211,6 +248,8 @@ def load_settings(settings_path: Path | None = None, env_file: Path | None = Non
 
     return Settings(
         database_url=_env("DATABASE_URL"),
+        stream_database_url=_env("STREAM_DATABASE_URL"),
+        streaming=StreamingSettings(**(raw.get("streaming") or {})),
         contact_email=_env("CONTACT_EMAIL"),
         openalex_api_key=_env("OPENALEX_API_KEY"),
         semantic_scholar_api_key=s2_key,
@@ -225,5 +264,6 @@ def load_settings(settings_path: Path | None = None, env_file: Path | None = Non
         embedding=EmbeddingSettings(**(raw.get("embedding") or {})),
         spark=SparkSettings(**(raw.get("spark") or {})),
         rag=_rag_settings(raw.get("rag") or {}),
+        web=WebSettings(**(raw.get("web") or {})),
         anthropic_api_key_present=bool(_env("ANTHROPIC_API_KEY") or _env("ANTHROPIC_AUTH_TOKEN")),
     )

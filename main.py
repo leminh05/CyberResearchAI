@@ -9,9 +9,16 @@ Usage (PowerShell, from the project root with .venv activated):
     python main.py process [--limit 20] [--no-download]   # PDFs -> chunks -> embeddings
     python main.py search "intrusion detection with GNN"  # semantic search over chunks
     python main.py benchmark [--sizes 1000 10000]         # plain Python vs PySpark
+    python main.py hdfs-check                             # Spark round trip on HDFS (in the app container)
+    python main.py lake                                   # arXiv Bronze/Silver/Gold on HDFS (in the app container)
+    python main.py lake-load [--limit 1000]               # Silver papers into DATABASE_URL (in the app container)
+    python main.py stream-produce                         # crawl new papers into Kafka (in the app container)
+    python main.py stream-consume                         # Kafka to Spark to PostgreSQL (in the app container)
     python main.py chat                                   # terminal research chatbot (Claude)
     python main.py ask "How are GNNs used for IDS?"       # one question, then exit
     python main.py rag-eval [--retrieval-only]            # run the test questions
+    python main.py evaluate [--part data retrieval performance answers]  # Phase 4 metrics
+    python main.py serve [--provider ollama] [--port 8000]  # web API and chat website
 """
 
 from __future__ import annotations
@@ -24,12 +31,14 @@ import sys
 sys.path.insert(0, "src")
 
 from cyberresearch.config import PROJECT_ROOT, load_settings  # noqa: E402
+from cyberresearch.evaluation.cli import add_evaluation_commands, run_evaluation_command  # noqa: E402
 from cyberresearch.ingestion.cli import add_ingestion_commands, run_ingestion_command  # noqa: E402
 from cyberresearch.logging_setup import setup_logging  # noqa: E402
 from cyberresearch.processing.cli import add_processing_commands, run_processing_command  # noqa: E402
 from cyberresearch.rag.cli import RAG_COMMANDS, add_rag_commands, run_rag_command  # noqa: E402
+from cyberresearch.web.cli import add_web_commands, run_web_command  # noqa: E402
 
-PROCESSING_COMMANDS = {"process", "search", "benchmark"}
+PROCESSING_COMMANDS = {"process", "search", "benchmark", "hdfs-check", "lake", "lake-load", "stream-produce", "stream-consume"}
 
 
 def _java_version() -> str | None:
@@ -76,6 +85,8 @@ def main() -> int:
     add_ingestion_commands(subparsers)
     add_processing_commands(subparsers)
     add_rag_commands(subparsers)
+    add_evaluation_commands(subparsers)
+    add_web_commands(subparsers)
     args = parser.parse_args()
 
     if args.command == "check":
@@ -86,6 +97,10 @@ def main() -> int:
         return run_processing_command(args, settings)
     if args.command in RAG_COMMANDS:
         return run_rag_command(args, settings)
+    if args.command == "serve":
+        return run_web_command(args, settings)
+    if args.command == "evaluate":
+        return run_evaluation_command(args, settings)
     return run_ingestion_command(args, settings)
 
 

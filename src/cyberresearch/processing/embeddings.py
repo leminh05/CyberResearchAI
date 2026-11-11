@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from functools import lru_cache
 from typing import Protocol
 
 from cyberresearch.config import EmbeddingSettings
@@ -15,6 +16,24 @@ class Embedder(Protocol):
 
     def embed(self, texts: list[str]) -> list[list[float]]:
         ...
+
+
+class CrossEncoderReranker:
+    """Scores (question, passage) pairs with a cross-encoder running on the CPU."""
+
+    def __init__(self, model_name: str) -> None:
+        from sentence_transformers import CrossEncoder  # heavy import, load lazily
+
+        self.model = CrossEncoder(model_name, device="cpu")
+
+    def scores(self, query: str, texts: list[str]) -> list[float]:
+        return [float(s) for s in self.model.predict([(query, t) for t in texts], show_progress_bar=False)]
+
+
+@lru_cache(maxsize=1)
+def load_reranker(model_name: str) -> CrossEncoderReranker:
+    """One instance per process: the website builds a Retriever for every request."""
+    return CrossEncoderReranker(model_name)
 
 
 class SentenceTransformerEmbedder:

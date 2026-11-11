@@ -1,5 +1,49 @@
+<div align="center">
+
 # CyberResearchAI
-Big Data-based Cybersecurity Research Assistant with RAG and Verified Citations
+
+**Ask questions about cybersecurity research and get answers that cite the papers, with every quote checked against the source text.**
+
+[![CI](https://github.com/leminh05/CyberResearchAI/actions/workflows/ci.yml/badge.svg?branch=develop)](https://github.com/leminh05/CyberResearchAI/actions/workflows/ci.yml)
+![Python 3.11](https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white)
+![PostgreSQL + pgvector](https://img.shields.io/badge/PostgreSQL-pgvector-4169E1?logo=postgresql&logoColor=white)
+![Apache Spark](https://img.shields.io/badge/Apache%20Spark-3.5-E25A1C?logo=apachespark&logoColor=white)
+![Apache Kafka](https://img.shields.io/badge/Apache%20Kafka-streaming-231F20?logo=apachekafka&logoColor=white)
+![Hadoop HDFS](https://img.shields.io/badge/HDFS-data%20lake-66CCFF?logo=apachehadoop&logoColor=black)
+![React](https://img.shields.io/badge/React-chat-61DAFB?logo=react&logoColor=black)
+![Ollama](https://img.shields.io/badge/LLM-Ollama%20qwen2.5%3A7b-000000)
+![Gemini](https://img.shields.io/badge/LLM-Gemini%202.5%20Flash-4285F4?logo=googlegemini&logoColor=white)
+
+<img src="docs/images/chat.png" alt="The chat answering a Vietnamese question about prompt injection, with numbered references and verified quotes" width="820">
+
+</div>
+
+## At a glance
+
+| | |
+|---|---|
+| **Corpus** | 54,301 cybersecurity papers and 74,005 embedded chunks in the large corpus; 377 papers with PDF text in the evaluated one |
+| **Sources** | arXiv, OpenAlex and Semantic Scholar APIs, plus the Kaggle arXiv snapshot through an HDFS lake |
+| **Big Data path** | PySpark Bronze / Silver / Gold on HDFS, and Kafka with Spark Structured Streaming into the chatbot's database |
+| **Search** | Hybrid vector + full-text search, a cross-encoder reranker, at most 3 chunks per paper |
+| **Answers** | Gemini API (about 30 s) or local Ollama (2-3 min), picked in the chat header; a citation is shown only if its quote is found word for word in the cited chunk |
+| **Measured** | Large corpus: MRR 0.935, 0 unsupported claims shown, 7 of 8 unanswerable questions declined. Silver labels from AI judges; limits in the [report](docs/evaluation_report.md) |
+
+```mermaid
+flowchart LR
+    A[arXiv / OpenAlex /<br/>Semantic Scholar] -->|daily, backfill| P[(PostgreSQL<br/>+ pgvector)]
+    A -->|crawler| K[[Kafka]] -->|Spark Structured<br/>Streaming| P
+    S[Kaggle arXiv<br/>snapshot] --> H[(HDFS lake<br/>Bronze / Silver / Gold)] -->|PySpark| P
+    P -->|hybrid search<br/>+ reranker| R[RAG engine]
+    R <-->|grounded prompt| L[Gemini API<br/>or local Ollama]
+    R -->|verified citations| W[FastAPI + React chat]
+```
+
+**Contents:** [Team](#team) · [Quickstart](#quickstart-docker) · [Setup](#setup-windows-powershell) ·
+[Data ingestion](#data-ingestion-phase-1) · [Processing](#pdf-processing-and-embeddings-phase-2) ·
+[RAG chatbot](#rag-chatbot-phase-3) · [Evaluation](#evaluation-phase-4) · [HDFS lake](#hdfs-data-lake) ·
+[Streaming](#streaming-ingestion) · [Web app](#web-application-phase-5) · [Tests](#tests) ·
+[Project layout](#project-layout)
 
 ## Status
 
@@ -9,6 +53,60 @@ Big Data-based Cybersecurity Research Assistant with RAG and Verified Citations
 | 1 | Academic data ingestion (arXiv, OpenAlex, Semantic Scholar) | Done |
 | 2 | PDF processing, chunking, embeddings, pgvector, PySpark + benchmark | Done |
 | 3 | RAG engine with verified citations + terminal chatbot | Done |
+| 4 | System evaluation: data, retrieval, answers, performance | Done (see [docs/evaluation_report.md](docs/evaluation_report.md)) |
+| 5 | Web application: FastAPI backend + React chat with verifiable citations | Done |
+
+## Team
+
+Group 5. Lê Quang Minh (leader) and Nguyễn Võ Minh Nguyên.
+
+| Area | Lead | Support |
+|---|---|---|
+| Phase 0: repository, configuration, branch workflow | Lê Quang Minh | Nguyễn Võ Minh Nguyên |
+| Phase 1: ingestion from arXiv, OpenAlex, Semantic Scholar; deduplication; checkpoints | Lê Quang Minh | |
+| Phase 2: legal PDF download, extraction, cleaning, chunking, embeddings | Nguyễn Võ Minh Nguyên | Lê Quang Minh |
+| Phase 2: PySpark jobs and the Python vs Spark benchmark | Nguyễn Võ Minh Nguyên | |
+| Phase 3: RAG engine, citation validation, terminal chatbot, Ollama | Lê Quang Minh | |
+| PostgreSQL + pgvector in Docker, data migration | Lê Quang Minh | |
+| Phase 4: golden set, metrics, evaluation report | Nguyễn Võ Minh Nguyên | Lê Quang Minh |
+| Phase 5: FastAPI backend, rate limits, conversations | Lê Quang Minh | |
+| Phase 5: React interface, frontend and end-to-end tests | Nguyễn Võ Minh Nguyên | Lê Quang Minh |
+| Quality fixes: hybrid search, summary validation | Lê Quang Minh | Nguyễn Võ Minh Nguyên |
+| HDFS lake (Bronze / Silver / Gold) and the large corpus | Nguyễn Võ Minh Nguyên | |
+| Kafka + Spark Structured Streaming | Lê Quang Minh | Nguyễn Võ Minh Nguyên |
+| Cross-encoder reranker and relabelling of the large corpus | Nguyễn Võ Minh Nguyên | |
+| CI (GitHub Actions), Docker quickstart | Lê Quang Minh | |
+| Gemini provider, key rotation, model selector | Lê Quang Minh | |
+| Pull request review and merges, progress tracking | Lê Quang Minh | |
+| Report and README | Both | |
+| Slides | Nguyễn Võ Minh Nguyên | |
+| Release to `main`, clean Docker run, demo | Lê Quang Minh | Nguyễn Võ Minh Nguyên |
+
+## Quickstart (Docker)
+
+From an empty database to a working chatbot with a small sample of recent papers. Needs Docker
+Desktop with Compose v2, and [Ollama](https://ollama.com) running on this machine for the answers.
+
+```powershell
+ollama pull qwen2.5:7b
+Copy-Item .env.example .env       # then set POSTGRES_PASSWORD, and the same value in DATABASE_URL
+docker compose up -d --wait
+docker compose --profile app build app
+docker compose run --rm app init-db
+docker compose run --rm app daily --sources arxiv --max-records 50
+docker compose run --rm app process --no-download
+docker compose --profile web up -d --build --wait
+```
+
+Open http://127.0.0.1:8000. The first run downloads the images and the embedding model. An answer
+takes 1-3 minutes on a small GPU. Stop with `docker compose --profile web down`; data stays in the
+volumes.
+
+This sample holds only recently published papers with abstracts, so it shows that the system works,
+not the quality measured in the [evaluation report](docs/evaluation_report.md). More data: PDF text
+with `process` ([Phase 2](#pdf-processing-and-embeddings-phase-2)), a date range with `backfill`
+([Phase 1](#data-ingestion-phase-1)), and about 54,000 papers from the arXiv snapshot
+([large corpus](#large-corpus-for-the-chatbot)).
 
 ## Setup (Windows PowerShell)
 
@@ -238,24 +336,29 @@ What this does **not** show:
 
 ## RAG chatbot (Phase 3)
 
-Two interchangeable answer generators, selected with `rag.provider` in
+Three interchangeable answer generators, selected with `rag.provider` in
 `config/settings.yaml` or `--provider` on the command line:
 
 | Provider | Needs | Notes |
 |---|---|---|
 | `claude` (default) | `ANTHROPIC_API_KEY` in `.env` (billed per use) | `claude-opus-5-5`, structured output, refusal fallback |
 | `ollama` | [Ollama](https://ollama.com) running locally + `ollama pull qwen2.5:7b` | Free, offline. On this laptop (GTX 1650 Ti 4 GB, 32 GB RAM) about 2-3 min per answer; less accurate |
+| `gemini` | `GEMINI_API_KEY` in `.env` ([free tier](https://aistudio.google.com/apikey)) | `gemini-2.5-flash`, about 40 s per answer on the website. Questions and excerpts are sent to Google |
 
-Prompt, JSON schema and citation validation are the same for both, so a
+Prompt, JSON schema and citation validation are the same for all three, so a
 weaker local model cannot slip unverified citations through - its answers are
 downgraded instead. Ollama's context window is set explicitly
 (`rag.ollama.num_ctx`), and a prompt that fills it is rejected, because Ollama
-otherwise silently cuts long prompts. To keep models off drive C, set the user
+otherwise silently cuts long prompts. `GEMINI_API_KEY` may hold several keys
+separated by commas: on a rate limit the next key is used, and the chatbot waits
+only when every key is limited (and fails at once on a daily limit). The answer
+evaluation in `docs/evaluation_report.md` was run with Ollama, not Gemini. To keep models off drive C, set the user
 environment variable `OLLAMA_MODELS` (for example `D:\Ollama\models`) and
 restart Ollama before pulling.
 
 ```powershell
 python main.py chat --provider ollama                  # free local model
+python main.py chat --provider gemini                  # hosted, free tier
 python main.py chat                                    # interactive chatbot (Claude)
 python main.py chat --year-min 2025 --topic intrusion_detection
 python main.py ask "How are graph neural networks used for intrusion detection?"
@@ -283,7 +386,7 @@ Claude (claude-opus-5-5, structured JSON) <── evidence E1..Ek + question + p
 | Same embedding model | `retrieval.py` refuses to run if `paper_chunks.embedding_model` differs from the query embedder |
 | Metadata filtering | year range, topic, `pdf`/`abstract`, excluded sections (default: `Front Matter`), paper ids - all in SQL |
 | Top-K selection | 40 nearest candidates → at most 3 chunks per paper → best 8 |
-| Reranking | **Not used** (see below) |
+| Reranking | Cross-encoder `ms-marco-MiniLM-L-6-v2` on the CPU over the merged candidates, before the per-paper cap; `rag.rerank` in `config/settings.yaml` (see below) |
 | Grounded prompt | `prompts.py`: evidence in `<evidence id="E3" ...>` blocks with year, section, page and similarity; no URLs or DOIs are shown to Claude; text inside excerpts is treated as data (prompt-injection guard) |
 | Structured output | `output_config.format` JSON schema: `answer_status`, `summary`, `claims[{statement, kind: evidence\|interpretation, citations[{evidence_id, quote}]}]`, `ambiguity_note`, `limitations`, `follow_up_suggestions` |
 | Citation validation | `citations.py`: the evidence id must be one retrieved for this question **and** the quote (≥ 5 words) must occur in that chunk's stored text. Unverified citations are dropped; an evidence claim with none left is removed and the answer is downgraded |
@@ -301,12 +404,215 @@ in Vietnamese). Latest run with the local model: **15/15 passed**, see
 [docs/rag_eval_results.md](docs/rag_eval_results.md). The Claude API path is
 covered by unit tests with a fake client; it has not been run live yet.
 
-**Why no reranker.** A cross-encoder reranker would add a second model
-download and per-question latency. On the test questions the bi-encoder
-ranking with the per-paper cap already puts on-topic chunks first, and Claude
-discards irrelevant excerpts itself (it must quote what it cites). Reranking
-becomes worth measuring when the corpus grows or the Phase 4 evaluation shows
-relevant chunks ranked below the top 8.
+**Why a reranker.** It was measured when the corpus grew to 54,301 papers: MRR rose
+from 0.835 to 0.935, at about 2 s per question on the CPU and one more model download.
+It changes only the order, so the similarity gate still uses cosine scores. On the
+377-paper corpus it changed little. Section 11 of the
+[evaluation report](docs/evaluation_report.md) has the numbers and their limits,
+including one more unanswerable question that got a partial answer.
+
+## Evaluation (Phase 4)
+
+```powershell
+python main.py evaluate                                  # data quality, retrieval, performance (~2 min)
+python main.py evaluate --part answers --provider ollama # answer quality, calls the LLM (~45 min locally)
+python main.py evaluate --part retrieval --ids gnn-ids   # one question
+python scripts/build_judgment_pool.py > data/eval/pool.md  # candidates for relevance judging
+```
+
+- Dataset: [config/eval/golden_set.yaml](config/eval/golden_set.yaml) -
+  30 answerable questions with judged relevant papers (stable DOI/arXiv keys)
+  and key points, 10 unanswerable ones (4 off-domain, 6 in-domain "hard").
+- Results: JSON per part in `docs/evaluation/` (regenerated by the command;
+  the first evaluation is kept in `docs/evaluation/before_quality_fixes/`);
+  methods, numbers and weaknesses in
+  [docs/evaluation_report.md](docs/evaluation_report.md).
+
+## HDFS data lake
+
+A small HDFS cluster for the Spark data lake: one NameNode and two DataNodes, with
+every block stored twice. All three run on this machine, so it demonstrates HDFS
+storage and replication, not cluster speed or protection against a machine failing.
+
+```powershell
+docker compose --profile hdfs up -d                        # NameNode UI: http://127.0.0.1:9870
+docker compose --profile app --profile hdfs build app      # once, and after code changes
+docker compose --profile app --profile hdfs run --rm app hdfs-check   # Spark writes, reads back and compares
+docker compose --profile hdfs stop                         # data stays in the hdfs_* volumes
+```
+
+Run Spark jobs that use HDFS in the `app` container: the host cannot resolve the
+`namenode` and `datanode` names, and the image has the Java version Spark needs.
+The cluster has no security and publishes only its web UI, on localhost.
+
+### arXiv lake (Bronze / Silver / Gold)
+
+Put the Kaggle arXiv snapshot at `data/raw/arxiv/arxiv-metadata-oai-snapshot.json`, then:
+
+```powershell
+docker compose --profile app --profile hdfs run --rm app lake
+```
+
+Bronze keeps every raw record, Silver keeps cleaned and de-duplicated `cs.CR` papers
+plus the rejected ids, and Gold holds statistics by year and by related category. The
+report is saved to `data/eval/lake_report.json`; the measured run is in
+[docs/bigdata/lake_report.json](docs/bigdata/lake_report.json).
+
+### Large corpus for the chatbot
+
+About 54,000 cybersecurity papers in their own database, `cyberresearch_large`, which
+starts as a copy of the main one. The application uses it only when `APP_DB` is set:
+
+```powershell
+$env:APP_DB = "cyberresearch_large"
+docker compose --profile app --profile hdfs run --rm app lake-load              # Silver papers into PostgreSQL
+docker compose --profile app --profile hdfs run --rm app process --no-download  # embeddings for the abstracts
+Remove-Item Env:APP_DB
+```
+
+To serve this corpus from the website, set `WEB_DB=cyberresearch_large` in `.env` and run
+`docker compose --profile web up -d`. Only the website uses it: crawling, processing and
+`main.py evaluate` stay on the main database, whose labels they rely on. Streaming follows
+the website (see [Streaming ingestion](#streaming-ingestion)). Without that database, leave
+`WEB_DB` empty.
+
+The new papers have abstracts only, so answers from them cite no page numbers. Section 11
+of the evaluation report has the measured effect on answers.
+
+## Streaming ingestion
+
+New papers flow through Kafka without a manual command:
+
+```text
+crawler (stream-produce) -> Kafka topic papers.raw -> Spark Structured Streaming (stream-consume)
+                                                        |-> raw messages on HDFS (Bronze)
+                                                        |-> bad messages on HDFS (rejected)
+                                                        |-> PostgreSQL: papers, abstract chunks, embeddings
+```
+
+```powershell
+docker compose --profile streaming up -d --build     # Kafka, HDFS, crawler (hourly) and streaming job
+docker compose --profile streaming logs -f stream-consumer   # one JSON line per micro-batch
+docker compose --profile streaming stop              # data stays in the volumes
+```
+
+For a short demonstration, run each side once:
+
+```powershell
+docker compose --profile hdfs --profile streaming up -d kafka namenode datanode1 datanode2
+docker compose --profile app run --rm app stream-produce --sources arxiv --max-records 10
+docker compose --profile app run --rm app stream-consume --once
+```
+
+To send older papers through the same path, give a date range. The crawler then runs once,
+window by window, and a second run continues where the first stopped:
+
+```powershell
+docker compose --profile app run --rm app stream-produce --start 2024-01-01 --max-records 2000
+```
+
+`--max-records` applies to each source and topic and is checked after each page, so one run
+can send up to a page more (100 records for arXiv and OpenAlex). Cutting a page short would
+make the saved cursor skip its remaining records.
+
+Streamed papers go to the database the website serves, so the chatbot can answer from them
+as soon as a batch ends, with no restart. `STREAM_DB` in `.env` sends them elsewhere. With
+`WEB_DB` empty that is the main database, so streaming on a machine that holds the Phase 4
+corpus changes what `main.py evaluate` measures: set `STREAM_DB` to another name there. Only
+abstracts are embedded here; PDFs stay a job for `process`.
+
+Delivery is at least once: a batch is replayed after a crash, and the deduplicating
+upsert makes the replay harmless. Kafka has one broker, no authentication and no
+published port. This runs on one machine, so it shows the mechanism, not cluster
+scale. Sources publish in daily batches, so batch ingestion would also serve this
+corpus; streaming adds automation rather than fresher answers.
+
+## Web application (Phase 5)
+
+A thin FastAPI layer (`src/cyberresearch/web/`) over the same `RAGEngine` as the
+terminal chatbot, and a React chat (`frontend/`). Retrieval, generation and
+citation validation are not duplicated: the website only displays what the
+backend validated.
+
+### Run locally
+
+Needs the database running (`docker compose up -d`) and Node.js 20+ for the build.
+
+```powershell
+cd frontend
+npm ci
+npm run build                            # creates frontend/dist, served by FastAPI
+cd ..
+python main.py serve --provider ollama   # or gemini / claude with its key in .env
+```
+
+Open http://127.0.0.1:8000. On this laptop an Ollama answer takes 1-3 minutes and a
+Gemini answer 20-40 s; off-topic questions are declined at once.
+
+**Choosing the model:** the `--provider` model is the default, and the header offers
+every other model that can run: Ollama always, Gemini and Claude only when their key
+is in `.env`. The choice is sent with each question, so it can change in the middle
+of a conversation; reloading the page goes back to the default.
+
+**Frontend development** (hot reload): keep `python main.py serve` running, run
+`npm run dev` in `frontend/` and open http://localhost:5173. Vite forwards `/api`
+to the backend, so the API needs no CORS.
+
+### API
+
+| Endpoint | Purpose |
+|---|---|
+| `POST /api/chat` | Body `{"question": "...", "conversation_id": null}`. Returns status, summary, claims with verified citations, references and metadata |
+| `GET /api/health` | Database, model and corpus status. HTTP 503 if the database is down |
+| `DELETE /api/conversations/{id}` | Forget the follow-up context of a conversation |
+| `GET /docs` | Interactive API documentation |
+
+A reference is built from the database row behind the citation, never from model
+output, and each quote was found in the cited chunk by the existing validator.
+Errors have the form `{"error": {"code": "...", "message": "..."}}`:
+
+| HTTP | Code | When |
+|---|---|---|
+| 404 | `conversation_not_found` | Conversation expired, or the server restarted |
+| 409 | `conversation_busy` | That conversation is still answering |
+| 413 | `body_too_large` | Request body over 64 KB |
+| 422 | `invalid_request` | Empty question, over 2,000 characters, or unknown fields |
+| 429 | `rate_limited` | Over the per-client limit; see the `Retry-After` header |
+| 502 | `llm_failed` | The model failed. Details go to the log, not to the client |
+| 503 | `busy`, `database_unavailable` | All answer slots in use, or database unreachable |
+
+Limits are in `web:` in `config/settings.yaml`. An abstention
+(`insufficient_evidence`, `out_of_scope`, `refused`) is a normal HTTP 200 answer.
+
+### Deployment
+
+```powershell
+docker compose --profile web up -d --build   # website on http://127.0.0.1:8000
+docker compose --profile web logs -f web
+docker compose --profile web down
+```
+
+The image builds the website and serves it from FastAPI, so there is one process
+and one origin. `WEB_PROVIDER` (default model: `ollama` or `gemini`) and `WEB_PORT` come from `.env`.
+
+**Before exposing it beyond this machine:**
+
+- The API has **no login**, which is why it binds to localhost by default. Anyone
+  who can reach it can spend your Claude API budget or Gemini quota. Put a reverse proxy (Caddy,
+  nginx) with HTTPS and authentication in front of it.
+- Configure the proxy to limit body size. Behind a proxy all users share one rate
+  limit, because the limiter sees the proxy's address.
+- Run one server process only. Conversations and limits live in memory, so they
+  reset on restart and are not shared between workers.
+
+Secrets (`ANTHROPIC_API_KEY`, `GEMINI_API_KEY`, `DATABASE_URL`) are read by the backend only. The
+browser never receives them, and the end-to-end suite checks this for the
+bundle and the health endpoint.
+
+**Known limits:** the model summary is not citation-checked (see the evaluation
+report), so the page labels it; only the numbered findings are verified. A
+cleared or closed page stops waiting, but the server still finishes the model
+call it started. Message history lives in the page and is lost on reload.
 
 ## Tests
 
@@ -314,7 +620,16 @@ relevant chunks ranked below the top 8.
 python -m pytest              # offline tests (fake HTTP, temporary PostgreSQL, local Spark)
 python -m pytest -m live -v   # real API calls (network required)
 python -m pytest -m model -v  # real Sentence Transformers model (downloads ~90 MB once)
+
+cd frontend
+npm test                      # React interaction and citation rendering (fake API)
+npm run test:e2e              # browser against the real API, retrieval and validation
 ```
+
+`npm run test:e2e` needs the database with the corpus. It uses the installed Edge
+(`E2E_BROWSER_CHANNEL` selects another, for example `chrome`) and `.venv`'s Python
+(`E2E_PYTHON` overrides it). The LLM is scripted (`tests/e2e_server.py`), so it
+needs no Ollama or API key and costs nothing.
 
 Test PDFs are generated by `tests/pdf_factory.py` at run time (running
 headers, page footers, arXiv stamp, hyphenation, numbered sections), so no
@@ -322,6 +637,10 @@ binary or copyrighted PDFs are stored in the repository.
 
 Database tests use `TEST_DATABASE_URL` if set; otherwise a temporary embedded
 PostgreSQL. Each test runs in its own throw-away schema.
+
+GitHub Actions ([ci.yml](.github/workflows/ci.yml)) runs the offline tests, the frontend
+tests and the frontend build on every pull request and on pushes to `main` and `develop`.
+It does not run `live`, `model` or `test:e2e`.
 
 ## Project layout
 
@@ -358,15 +677,33 @@ src/cyberresearch/
     dataset.py                Benchmark dataset (real + synthetic scale-up)
     benchmark.py              Python vs Spark timing and memory
   rag/
-    retrieval.py              Query embedding, filters, top-K, diversity
+    retrieval.py              Hybrid search (vector + full text), filters, diversity
     prompts.py                System prompt, evidence blocks, JSON schema
     llm.py                    Claude API client (structured output, fallback)
     ollama_client.py          Local Ollama client (same interface)
+    gemini_client.py          Gemini API client, rotates several keys on rate limits
     citations.py              Citation mapping and validation
     engine.py                 Retrieve -> gate -> generate -> validate
     chat.py                   Terminal chatbot
     evaluation.py             Test-question runner and pass rules
+  web/
+    app.py                    FastAPI routes, errors, security headers
+    schemas.py                Request validation, citation response schema
+    limits.py                 Rate limiter, in-memory conversations
+    cli.py                    `serve` command
+  evaluation/
+    dataset.py                Golden set loading, stable paper keys
+    metrics.py                Precision/recall@K, MRR, key-point coverage
+    data_quality.py           Corpus, dedup, metadata, PDF, ingestion metrics
+    retrieval_eval.py         Retrieval quality against judged papers
+    answer_eval.py            Citation validity, unsupported claims, latency
+    performance.py            Throughput, embedding and vector-search latency
+    cli.py                    `evaluate` command
+frontend/                     React chat (Vite); e2e/ has the browser tests
 config/rag_test_questions.yaml  Test questions (sufficient/weak/outside/ambiguous)
+config/eval/golden_set.yaml   Phase 4 evaluation dataset with relevance judgments
+scripts/build_judgment_pool.py  Candidate pool for relevance judging
+docs/evaluation/              Phase 4 measurements (generated JSON)
 docs/benchmark_results.md     Latest benchmark report (generated)
 tests/                        Unit tests (+ tests/live for real APIs)
 main.py                       Entry point
@@ -381,11 +718,14 @@ the `pgserver` package and stored in `data/pgdata/` (git-ignored). On Windows
 the embedded server can get stuck in crash recovery because its log file lives
 inside the data directory; Docker avoids this.
 
-**Vector search accuracy.** pgvector's HNSW index is approximate and SQL
-filters are applied after it, so retrieval sets `hnsw.ef_search = 200`
-(`rag.hnsw_ef_search`). With the default of 40 one test question lost its best
-chunk (similarity 0.379 instead of 0.414 from an exact search); with 200 the
-results match exact search on this corpus.
+**Vector search accuracy.** pgvector's HNSW index is approximate, so retrieval
+uses an exact scan (`rag.exact_vector_search`): about 19 ms with no missed chunks.
+The index takes about 2 ms, but with `ef_search = 100` recall@40 falls to 0.946 and
+MRR from 0.858 to 0.824. With an answer taking over a minute, 17 ms is not worth a
+wrong answer. Rebuilding the index with larger `m` and `ef_construction` did not
+remove the loss. Turn the setting off only when a much larger corpus makes the
+exact scan too slow. It is set explicitly because the planner's own choice changes
+with table statistics: adding a column flipped it from exact scan to the index.
 
 ## Branch strategy
 

@@ -83,7 +83,8 @@ embedding:
   batch_size: 32
 
 rag:
-  # Answer generator: "claude" (Claude API, needs ANTHROPIC_API_KEY) or
+  # Answer generator: "claude" (Claude API, needs ANTHROPIC_API_KEY),
+  # "gemini" (Gemini API, needs GEMINI_API_KEY) or
   # "ollama" (free local model; slower and less accurate). Override per run
   # with --provider. Citation validation is identical for both.
   provider: "claude"
@@ -95,6 +96,13 @@ rag:
     num_ctx: 12288
     num_predict: 4096
     timeout_seconds: 900
+  # Hosted, with a free tier. Questions and paper excerpts are sent to Google.
+  # The key comes from GEMINI_API_KEY in .env.
+  gemini:
+    model: "gemini-2.5-flash"
+    # The limit includes hidden thinking tokens.
+    max_tokens: 8192
+    timeout_seconds: 120
   # Claude model and reasoning effort for answer generation.
   model: "claude-opus-5-5"
   effort: "medium"
@@ -103,10 +111,23 @@ rag:
   # max_chunks_per_paper per paper (diversity), then the best top_k.
   top_k: 8
   candidate_k: 40
-  # HNSW search breadth. The default (40) let SQL filters drop the best chunk
-  # (measured: 0.379 vs exact 0.414 for one question); 200 matches exact search
-  # on this corpus at negligible cost.
+  # Exact scan instead of the HNSW index: about 19 ms with recall 1.0 on this
+  # corpus. The index takes 2 ms but loses chunks (ef_search 100: recall@40 0.946,
+  # MRR 0.858 -> 0.824). Set false only when a much larger corpus makes the exact
+  # scan too slow; hnsw_ef_search applies only then.
+  exact_vector_search: true
   hnsw_ef_search: 200
+  # Hybrid search: merge the cosine ranking with a full-text search for chunks
+  # containing all rare terms of the question (terms in more than
+  # lexical_max_doc_fraction of the chunks are ignored). Chosen on the golden
+  # set, see docs/evaluation_report.md. rrf_k is the usual fusion constant.
+  hybrid_search: true
+  lexical_max_doc_fraction: 0.10
+  rrf_k: 60
+  # Cross-encoder over the merged candidates, about 1.8 s per question on the CPU.
+  # Measured in docs/evaluation_report.md, section 11.
+  rerank: true
+  rerank_model: "cross-encoder/ms-marco-MiniLM-L-6-v2"
   max_chunks_per_paper: 3
   # Cosine-similarity gates (calibrated on the test questions, see README):
   # below min_similarity nothing is sent to Claude ("insufficient evidence");
@@ -120,11 +141,33 @@ rag:
   # A citation quote must contain at least this many words.
   min_quote_words: 5
 
+web:
+  # Chat questions per minute from one client address.
+  rate_limit_per_minute: 10
+  # Questions answered at the same time; further ones get "busy" (HTTP 503)
+  # instead of queueing behind a slow local model.
+  max_concurrent_requests: 2
+  # Follow-up context is kept in memory, dropped when idle or when full.
+  max_conversations: 1000
+  conversation_ttl_minutes: 60
+
 spark:
   # local[*] = one JVM using all CPU cores of this machine (NOT a cluster).
   master: "local[*]"
+  # Data lake root. The name "namenode" resolves only inside the Compose network,
+  # so jobs that use HDFS run in the app container (see README).
+  lake_root: "hdfs://namenode:8020/cyberresearch"
+  hdfs_replication: 2
   driver_memory: "2g"
   shuffle_partitions: 8
+
+streaming:
+  # The name "kafka" resolves only inside the Compose network.
+  bootstrap_servers: "kafka:9092"
+  topic: "papers.raw"
+  # Upper limit of one micro-batch, which is collected in the driver to embed it.
+  max_offsets_per_trigger: 200
+  trigger_seconds: 30
 
 logging:
   directory: "logs"

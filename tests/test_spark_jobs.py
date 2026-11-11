@@ -1,6 +1,8 @@
 """Spark DataFrame transformations and the Python vs Spark benchmark."""
 
 import json
+import os
+import sys
 from pathlib import Path
 
 import pytest
@@ -38,6 +40,16 @@ def raw_path(tmp_path: Path) -> Path:
     path = tmp_path / "raw.jsonl"
     write_jsonl(RAW, path)
     return path
+
+
+@pytest.mark.skipif(sys.platform == "win32" and not os.getenv("HADOOP_HOME"),
+                    reason="Spark cannot write local files on Windows without winutils; `hdfs-check` covers this in Docker")
+def test_lake_round_trip_cleans_up(spark, tmp_path) -> None:
+    from cyberresearch.bigdata.hdfs import round_trip
+
+    result = round_trip(spark, tmp_path.as_uri(), rows=100)
+    assert result["rows"] == 100 and result["parquet_files"] >= 1
+    assert list((tmp_path / "_check").iterdir()) == []
 
 
 def test_normalize_metadata(spark, raw_path: Path) -> None:

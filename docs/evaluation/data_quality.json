@@ -1,0 +1,113 @@
+{
+  "meta": {
+    "measured_at": "2026-11-02T16:26:26+00:00",
+    "machine": "Windows 10, Intel64 Family 6 Model 165 Stepping 2, GenuineIntel",
+    "python": "3.11.0",
+    "embedding_model": "sentence-transformers/all-MiniLM-L6-v2"
+  },
+  "collection": {
+    "papers": 377,
+    "source_records": 381,
+    "source_records_by_source": {
+      "arxiv": 5,
+      "openalex": 315,
+      "semantic_scholar": 61
+    },
+    "multi_source_papers": 4,
+    "publication_years": {
+      "2026": 377
+    }
+  },
+  "deduplication": {
+    "records_merged_into_existing_papers": 4,
+    "cross_source_duplicate_rate": 0.01,
+    "residual_same_title_groups": 5,
+    "residual_likely_duplicates_same_title_and_first_author": 4,
+    "residual_duplicate_rate": 0.011,
+    "papers_without_title": 6
+  },
+  "metadata_completeness": {
+    "title": 1.0,
+    "abstract": 0.857,
+    "authors": 0.989,
+    "year": 1.0,
+    "publication_date": 1.0,
+    "doi": 0.963,
+    "venue": 0.95,
+    "url": 1.0,
+    "pdf_url": 0.631
+  },
+  "topical_relevance": {
+    "papers_with_security_term_in_title_or_abstract": 0.745,
+    "english_titles": 0.971,
+    "method": "lexical proxy: any of secur, attack, intrusion, malware, threat, cyber, vulnerab, privacy, adversarial, phishing, fraud, botnet, ddos, encrypt, crypt, authentic, anomal, forensic"
+  },
+  "pdf": {
+    "documents_by_status": {
+      "failed/not_attempted": 12,
+      "robots_disallowed/not_attempted": 23,
+      "downloaded/extracted": 148,
+      "not_allowed/not_attempted": 194
+    },
+    "pdf_url_available_rate": 0.631,
+    "legally_downloadable": 183,
+    "legally_downloadable_rate": 0.485,
+    "download_attempted": 183,
+    "downloaded": 148,
+    "download_success_rate": 0.809,
+    "pdf_availability_rate": 0.393,
+    "extraction_success_rate": 1.0,
+    "content_source": {
+      "abstract": 181,
+      "none": 48,
+      "pdf": 148
+    },
+    "papers_without_indexed_text": 48
+  },
+  "chunks": {
+    "total": 7691,
+    "pdf": 7428,
+    "abstract": 263,
+    "mean_words": 184.2,
+    "reference_like_chunks": 96,
+    "reference_like_rate": 0.012
+  },
+  "ingestion": {
+    "runs": [
+      {
+        "mode": "daily",
+        "started": "2026-11-02T09:58:41.736221+00:00",
+        "wall_seconds": 23.1,
+        "units": 9,
+        "failed_units": 0,
+        "fetched": 324,
+        "inserted": 264,
+        "merged": 4
+      },
+      {
+        "mode": "daily",
+        "started": "2026-11-02T09:59:05.660900+00:00",
+        "wall_seconds": 18.1,
+        "units": 9,
+        "failed_units": 1,
+        "fetched": 43,
+        "inserted": 0,
+        "merged": 0
+      },
+      {
+        "mode": "daily",
+        "started": "2026-11-02T10:01:52.768942+00:00",
+        "wall_seconds": 6.6,
+        "units": 1,
+        "failed_units": 0,
+        "fetched": 231,
+        "inserted": 113,
+        "merged": 0
+      }
+    ],
+    "total_wall_seconds": 47.8,
+    "records_fetched": 598,
+    "records_per_second": 12.51,
+    "note": "wall time includes the per-source rate-limit waits (arXiv 3 s, Semantic Scholar 3 s without key)"
+  }
+}

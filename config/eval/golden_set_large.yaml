@@ -1,0 +1,869 @@
+# Golden set for the large corpus (cyberresearch_large). golden_set.yaml stays unchanged.
+#
+# Same questions. relevant = the original labels plus judgments of a new pool, built as for
+# golden_set.yaml (top-15 system papers + top-10 full-text papers; top-8 for unanswerable
+# questions) and shown without ranks, scores or origin. Judged on 2026-11-07 by the AI assistant
+# (Claude) from the title and the first 32 words of the abstract, not by a domain expert: silver
+# labels. Relevant papers outside the pool stay unknown, so recall is optimistic.
+# hard-bgp and hard-wpa3 became answerable, because this corpus has direct evidence for them.
+# Second pool, same day and same judge: the 45 papers the reranker put in a top 5 without a judgment,
+# mixed with 53 already judged ones and shown without origin; 28 were judged relevant. On the mixed-in
+# papers the judge repeated 48 of 53 earlier labels. Ranks 6-10 of the reranked list stay partly unjudged.
+questions:
+- id: gnn-ids
+  type: answerable
+  question: How are graph neural networks or graph structures used in network intrusion detection?
+  fts: graph & intrusion
+  relevant:
+  - doi:10.1007/978-3-032-42929-2_19
+  - doi:10.1145/3842721.3850227
+  - doi:10.5281/zenodo.23841598
+  - doi:10.1007/s42979-026-05363-0
+  - arxiv:2107.14756
+  - arxiv:2301.09801
+  - arxiv:2304.07226
+  - arxiv:2310.17348
+  - arxiv:2403.01501
+  - arxiv:2403.11830
+  - arxiv:2404.10800
+  - arxiv:2408.16021
+  - arxiv:2503.14284
+  - arxiv:2603.22365
+  - arxiv:2606.17109
+  - arxiv:2609.12263
+  - doi:10.1007/978-3-031-33488-7_20
+  - doi:10.1016/j.knosys.2022.110030
+  - doi:10.1109/nca67271.2025.00043
+  - doi:10.1109/noms54207.2022.9789878
+  - doi:10.1109/tnsm.2022.3197921
+  - doi:10.52202/085713-3653
+  key_points:
+  - - graph neural
+    - gnn
+  - - provenance
+    - topolog
+    - node
+  - - botnet
+    - zero-day
+- id: federated-ids
+  type: answerable
+  question: How is federated learning used for privacy-preserving intrusion detection?
+  fts: federated & intrusion
+  relevant:
+  - doi:10.1109/jiot.2026.3710613
+  - doi:10.59190/stc.v7i1.424
+  - doi:10.1145/3842721.3850217
+  - doi:10.1145/3842721.3850111
+  - doi:10.5281/zenodo.23805815
+  - doi:10.1016/j.comnet.2026.112806
+  - doi:10.5281/zenodo.23828609
+  - doi:10.1109/miot.2026.3714211
+  - doi:10.1016/j.ins.2026.123859
+  - doi:10.1922/comdem.v3i6s.18811
+  - doi:10.1145/3842721.3850227
+  - arxiv:2204.04254
+  - arxiv:2204.12443
+  - arxiv:2311.13800
+  - arxiv:2401.03560
+  - arxiv:2505.15376
+  - arxiv:2508.09056
+  - arxiv:2509.21389
+  - arxiv:2601.06466
+  - arxiv:2604.14663
+  - arxiv:2605.05644
+  - arxiv:2610.12704
+  - arxiv:2610.14767
+  - arxiv:2303.16956
+  - arxiv:2405.13062
+  - arxiv:2602.00219
+  - arxiv:2609.27202
+  key_points: &id001
+  - - federated
+  - - raw data
+    - without sharing
+    - without exchanging
+    - without transferring
+    - locally
+  - - non-iid
+    - heterogene
+  - - aggregat
+- id: iot-botnet
+  type: answerable
+  question: Which methods are proposed to detect botnets in IoT networks?
+  fts: botnet
+  relevant:
+  - doi:10.59190/stc.v7i1.424
+  - doi:10.1145/3842721.3850227
+  - doi:10.1109/jiot.2026.3725337
+  - arxiv:1809.10775
+  - arxiv:2010.11453
+  - arxiv:2012.00463
+  - arxiv:2302.02013
+  - arxiv:2403.18989
+  - arxiv:2407.15688
+  - doi:10.1109/access.2021.3110188
+  - doi:10.1109/icspis63676.2024.10812621
+  - doi:10.1109/mprv.2018.03367731
+  - arxiv:1901.04805
+  - arxiv:2106.12753
+  key_points:
+  - - autoencoder
+  - - federated
+  - - shap
+    - explainab
+    - fuzzy
+  - - graph
+- id: concept-drift
+  type: answerable
+  question: How do intrusion detection systems cope with concept drift in network traffic?
+  fts: drift
+  relevant:
+  - doi:10.22214/ijraset.2026.85146
+  - doi:10.5281/zenodo.23834172
+  - doi:10.12913/22998624/226855
+  - arxiv:2610.41541
+  - doi:10.5281/zenodo.23818383
+  - doi:10.5281/zenodo.23821645
+  - doi:10.5281/zenodo.23803111
+  - doi:10.5281/zenodo.23842133
+  - arxiv:2412.16264
+  - arxiv:2503.03022
+  - arxiv:2605.01962
+  - arxiv:2609.08623
+  key_points:
+  - - drift
+    - shift
+  - - retrain
+    - adaptive
+    - continuous
+    - incremental
+    - online
+  - - uncertaint
+    - alert
+  - - distribution
+- id: xai-ids
+  type: answerable
+  question: How is explainable AI used to make intrusion detection decisions interpretable?
+  fts: (explainable | shap | xai) & intrusion
+  relevant:
+  - doi:10.11591/ijict.v15i4.pp1726-1735
+  - doi:10.1038/s41598-026-72775-6
+  - arxiv:2610.41541
+  - doi:10.3390/app162110746
+  - doi:10.1109/jiot.2026.3725337
+  - doi:10.1038/s41598-026-76310-5
+  - doi:10.5281/zenodo.23828609
+  - doi:10.22214/ijraset.2026.85265
+  - doi:10.22266/ijies2026.1031.75
+  - doi:10.1016/j.iot.2026.102144
+  - arxiv:1911.09853
+  - arxiv:2103.07110
+  - arxiv:2207.06236
+  - arxiv:2207.07465
+  - arxiv:2308.00074
+  - arxiv:2309.16021
+  - arxiv:2401.10207
+  - arxiv:2406.09684
+  - arxiv:2407.04009
+  - arxiv:2408.03335
+  - arxiv:2501.00790
+  - arxiv:2507.00003
+  - arxiv:2507.21193
+  - arxiv:2605.19448
+  - doi:10.1002/spy2.70164
+  - doi:10.1007/978-3-031-86637-1_5
+  - doi:10.1007/s42979-023-02383-y
+  - doi:10.1016/j.bdr.2022.100359
+  - doi:10.1016/j.jisa.2026.104448
+  - doi:10.1109/tifs.2024.3488967
+  - arxiv:2505.08006
+  key_points:
+  - - shap
+  - - lime
+  - - feature
+    - attribution
+  - - analyst
+    - trust
+    - interpret
+- id: ddos
+  type: answerable
+  question: How are DDoS attacks detected with machine learning?
+  fts: ddos | (denial & service)
+  relevant:
+  - doi:10.11591/ijict.v15i4.pp1601-1613
+  - doi:10.17148/iarjset.2026.131063
+  - doi:10.5281/zenodo.23823403
+  - doi:10.1109/miot.2026.3714211
+  - doi:10.1145/3842721.3850227
+  - arxiv:1903.07889
+  - arxiv:1905.07893
+  - arxiv:2204.12855
+  - arxiv:2303.06513
+  - arxiv:2308.15674
+  - arxiv:2411.14512
+  - arxiv:2412.18990
+  - arxiv:2502.00975
+  - doi:10.1007/978-3-031-64064-3_7
+  - doi:10.1109/mcomstd.0001.2100022
+  - arxiv:2305.09475
+  - arxiv:2411.05890
+  - arxiv:2511.04114
+  key_points:
+  - - recurrent
+    - rnn
+    - lstm
+    - bidirectional
+  - - flash crowd
+  - - self-supervised
+    - federated
+  - - flow
+    - traffic
+- id: lm-threat-hunting
+  type: answerable
+  question: How can language models support threat hunting?
+  fts: threat & hunting
+  relevant:
+  - doi:10.1007/978-3-032-42929-2_17
+  - arxiv:2505.11901
+  - arxiv:2509.23571
+  - arxiv:2511.20290
+  - arxiv:2603.23966
+  - arxiv:2610.09007
+  key_points:
+  - - small language model
+    - slm
+  - - provenance
+    - log
+  - - hunt
+- id: rl-vulns
+  type: answerable
+  question: How is reinforcement learning applied to software vulnerability analysis?
+  fts: reinforcement & vulnerability
+  relevant:
+  - doi:10.1007/978-3-032-43217-9_5
+  - arxiv:2208.02369
+  - arxiv:2502.14307
+  - arxiv:2507.02969
+  - arxiv:2604.06618
+  - arxiv:2607.26656
+  key_points:
+  - - reinforcement
+  - - static analysis
+  - - c/c++
+    - c++
+    - source code
+  - - fuzz
+    - reward
+- id: phishing
+  type: answerable
+  question: How are machine learning and large language models used to detect phishing?
+  fts: phishing
+  relevant:
+  - doi:10.48175/ijarsct-40417
+  - doi:10.5281/zenodo.23816502
+  - arxiv:2308.12287
+  - arxiv:2402.17092
+  - arxiv:2403.09735
+  - arxiv:2407.20361
+  - arxiv:2408.05941
+  - arxiv:2502.04759
+  - arxiv:2509.08375
+  - arxiv:2509.09592
+  - arxiv:2511.15434
+  - doi:10.1145/3704522.3704532
+  - arxiv:2511.09606
+  - arxiv:2601.21261
+  key_points:
+  - - url
+    - website
+  - - email
+  - - large language model
+    - llm
+  - - classifier
+    - machine learning
+    - random forest
+- id: hijacked-agents
+  type: answerable
+  question: How can hijacked or compromised LLM agents be detected, and why do standard evaluations miss them?
+  fts: agent & (hijack | injection | detector)
+  relevant:
+  - arxiv:2610.41803
+  - arxiv:2508.19461
+  - arxiv:2605.22001
+  - arxiv:2609.06972
+  - arxiv:2609.10892
+  - arxiv:2610.03448
+  - arxiv:2610.24048
+  key_points:
+  - - tool
+  - - trace
+  - - rare
+    - base rate
+    - share
+  - - unseen
+- id: tool-call-privacy
+  type: answerable
+  question: What private information can leak from the tool calls of LLM agents?
+  fts: privacy & (tool | agent)
+  relevant:
+  - arxiv:2610.41885
+  - arxiv:2610.41401
+  - arxiv:2402.06922
+  - arxiv:2603.22751
+  - arxiv:2604.03070
+  - arxiv:2604.04035
+  - arxiv:2606.00152
+  - arxiv:2606.02483
+  - arxiv:2606.17114
+  - arxiv:2606.26627
+  - arxiv:2606.28061
+  - arxiv:2608.24957
+  - arxiv:2608.27800
+  - arxiv:2609.14003
+  - arxiv:2609.21686
+  - arxiv:2604.05432
+  key_points:
+  - - tool-call
+    - tool call
+  - - profile
+    - user
+  - - mcp
+    - model context protocol
+  - - infer
+- id: dp-training
+  type: answerable
+  question: How does differential privacy protect neural network training data against inference attacks?
+  fts: differential & privacy
+  relevant:
+  - doi:10.67231/483a7952
+  - doi:10.70267/cai.v3n4.178185
+  - arxiv:1902.08874
+  - arxiv:1912.11328
+  - arxiv:2103.02895
+  - arxiv:2107.14582
+  - arxiv:2112.12998
+  - arxiv:2211.05766
+  key_points:
+  - - differential privacy
+    - differentially private
+  - - noise
+    - gradient
+    - clipping
+  - - membership
+    - inference
+  - - utility
+    - epsilon
+    - privacy budget
+- id: zero-trust
+  type: answerable
+  question: What are the key components of zero-trust security architectures?
+  fts: zero & trust
+  relevant:
+  - doi:10.48175/ijarsct-40459
+  - doi:10.66281/70130/9232
+  - doi:10.1145/3842721.3850219
+  - arxiv:2309.03582
+  - arxiv:2401.03675
+  - arxiv:2508.12953
+  - doi:10.1007/s10922-025-09998-x
+  - doi:10.1016/j.cose.2024.104018
+  - doi:10.3390/encyclopedia4040099
+  - doi:10.34218/ijcs_04_01_001
+  - arxiv:2410.18291
+  - doi:10.1109/it64745.2025.10930254
+  key_points:
+  - - never trust
+    - always verify
+  - - least privilege
+    - least-privilege
+  - - continuous
+  - - identity
+    - authentication
+    - authorization
+- id: pqc
+  type: answerable
+  question: How is post-quantum cryptography combined with intrusion detection or TLS?
+  fts: quantum & (intrusion | tls | cryptography)
+  relevant:
+  - doi:10.1109/jiot.2026.3718816
+  - doi:10.1145/3842721.3850217
+  - doi:10.1038/s41598-026-76310-5
+  - doi:10.1016/j.compeleceng.2026.111429
+  - arxiv:2404.13544
+  key_points:
+  - - kyber
+    - ml-kem
+  - - tls
+  - - harvest-now
+    - harvest now
+  - - key encapsulation
+    - key exchange
+- id: blockchain-ids
+  type: answerable
+  question: How is blockchain used to make intrusion detection more trustworthy?
+  fts: blockchain & (intrusion | detection)
+  relevant:
+  - doi:10.21203/rs.3.rs-10843028/v1
+  - doi:10.3389/fbloc.2026.1960105
+  - doi:10.1016/j.ins.2026.123859
+  - doi:10.1016/j.compeleceng.2026.111413
+  - arxiv:2002.07512
+  - arxiv:2204.04254
+  - arxiv:2505.15376
+  - arxiv:2602.17973
+  - arxiv:2610.01872
+  - doi:10.1109/blockchain53845.2021.00048
+  - doi:10.1109/services.2019.00019
+  key_points:
+  - - hyperledger
+    - fabric
+    - permissioned
+  - - ledger
+    - immutable
+    - audit
+  - - signature
+  - - co-sign
+    - endorse
+    - consensus
+- id: honeypot
+  type: answerable
+  question: How are honeypots used to monitor attacks and collect threat intelligence?
+  fts: honeypot | (mock & bots)
+  relevant:
+  - doi:10.64388/ire1724506
+  - doi:10.5281/zenodo.23811730
+  - arxiv:0704.0858
+  - arxiv:0704.0861
+  - arxiv:1303.3071
+  - arxiv:1608.06249
+  - arxiv:2104.10232
+  - arxiv:2206.00385
+  - arxiv:2301.00045
+  - arxiv:2301.00710
+  - arxiv:2305.01346
+  - arxiv:2505.00465
+  - arxiv:2512.07827
+  - doi:10.1109/ic2ew.2016.16
+  - doi:10.1109/jsyst.2017.2762161
+  - arxiv:2206.13614
+  - arxiv:2603.14122
+  - doi:10.1145/3806008.3811698
+  key_points:
+  - - honeypot
+  - - esp32
+  - - command-and-control
+    - c2
+  - - credential
+    - scanning
+- id: cti-extraction
+  type: answerable
+  question: How can cyber threat intelligence be extracted automatically from social media posts?
+  fts: threat & intelligence
+  relevant:
+  - doi:10.1007/978-3-032-42929-2_14
+  - arxiv:1907.01755
+  - arxiv:2402.09973
+  key_points:
+  - - strategic
+  - - entity
+    - ner
+    - extraction
+  - - tweet
+    - twitter
+    - social media
+- id: apt
+  type: answerable
+  question: How are advanced persistent threats detected and prioritised?
+  fts: persistent & threat
+  relevant:
+  - doi:10.57159/jcmm.5.5.261067
+  - doi:10.1007/978-3-032-42929-2_17
+  - arxiv:2004.10690
+  - arxiv:2007.12327
+  - arxiv:2406.13186
+  - arxiv:2601.06734
+  - arxiv:2606.03523
+  - doi:10.1109/tdsc.2026.3689905
+  - doi:10.14722/ndss.2020.24046
+  - doi:10.18420/in2017_241
+  key_points:
+  - - calibrat
+  - - cost-sensitive
+    - cost sensitive
+  - - long-lived
+    - several hosts
+    - stealth
+  - - prioriti
+    - risk
+- id: edge-ids
+  type: answerable
+  question: How can intrusion detection models run on resource-constrained IoT edge devices?
+  fts: (edge | tinyml | constrained) & intrusion
+  relevant:
+  - doi:10.5281/zenodo.23838114
+  - doi:10.1109/jiot.2026.3731138
+  - doi:10.1145/3842721.3850111
+  - doi:10.5281/zenodo.23834172
+  - doi:10.1016/j.compeleceng.2026.111464
+  - arxiv:2210.03254
+  - arxiv:2502.06502
+  - arxiv:2504.10698
+  - arxiv:2511.18240
+  - arxiv:2609.27052
+  - arxiv:2610.09817
+  - doi:10.1016/j.jpdc.2023.05.001
+  - doi:10.1109/ccnc49032.2021.9369469
+  - doi:10.1109/csnt69054.2026.11502111
+  - doi:10.13182/xyz-46886
+  - doi:10.5121/ijcnc.2024.16102
+  - arxiv:2511.18230
+  key_points:
+  - - quantiz
+  - - decision tree
+    - tree
+  - - memory
+    - latency
+    - footprint
+  - - lightweight
+- id: iiot-ids
+  type: answerable
+  question: Which deep learning models detect multi-class intrusions in industrial IoT networks?
+  fts: industrial & (iot | iiot) & intrusion
+  relevant:
+  - doi:10.65890/race.v2i3.206
+  - arxiv:2401.00468
+  - arxiv:2602.23846
+  - arxiv:2605.06571
+  - doi:10.1109/ic2sda68097.2025.11331431
+  key_points:
+  - - lstm
+    - gru
+    - temporal
+    - recurrent
+  - - multi-class
+    - multiclass
+  - - industrial
+- id: synthetic-data
+  type: answerable
+  question: Can synthetic or generated data replace real data for training security detection models?
+  fts: synthetic | synthesizing
+  relevant:
+  - doi:10.53799/sa1d7q88
+  - doi:10.1007/978-3-032-42929-2_19
+  - doi:10.1016/j.jisa.2026.104584
+  - arxiv:2607.00763
+  - doi:10.1038/s41598-022-06057-2
+  key_points:
+  - - gan
+    - generative
+  - - synthetic
+  - - real data
+    - train-synthetic-test-real
+  - - imbalance
+    - minority
+- id: prompt-injection
+  type: answerable
+  question: How can chatbots be protected against prompt injection and data leakage?
+  fts: prompt & (injection | leakage)
+  relevant:
+  - doi:10.62452/40j21f47
+  - arxiv:2402.11755
+  - arxiv:2502.11006
+  - arxiv:2506.19109
+  - arxiv:2507.15219
+  - arxiv:2510.12252
+  - arxiv:2510.19844
+  - arxiv:2511.05797
+  - arxiv:2605.18133
+  key_points:
+  - - prompt injection
+  - - leak
+  - - perimeter
+    - decoupled
+    - gateway
+    - architecture
+  - - filter
+    - sanitiz
+    - guard
+- id: vehicle-security
+  type: answerable
+  question: Which security threats affect autonomous and connected vehicles, and how are they mitigated?
+  fts: vehicle & (security | secure | attack | intrusion)
+  relevant:
+  - doi:10.38124/ijisrt/26oct1249
+  - doi:10.11591/ijict.v15i4.pp1746-1758
+  - doi:10.1109/jiot.2026.3710613
+  - doi:10.11591/ijict.v15i4.pp1954-1963
+  - arxiv:1810.00545
+  - arxiv:1907.07455
+  - arxiv:2004.10781
+  - arxiv:2007.08041
+  - arxiv:2203.14965
+  - arxiv:2310.09510
+  - arxiv:2501.04104
+  - arxiv:2504.20180
+  - arxiv:2505.02231
+  - doi:10.1016/j.cose.2025.104352
+  - doi:10.1109/csci49370.2019.00021
+  - arxiv:2201.10349
+  - arxiv:2309.12955
+  key_points:
+  - - v2x
+    - vehicle-to-everything
+  - - authentication
+  - - intrusion detection
+    - ids
+  - - sensor
+    - lidar
+    - gps
+    - spoof
+- id: ids-datasets
+  type: answerable
+  question: Which benchmark datasets are used to evaluate network intrusion detection models?
+  fts: intrusion & dataset
+  relevant:
+  - doi:10.64820/aepjeer.32.16.20.122026
+  - doi:10.59190/stc.v7i1.424
+  - doi:10.5281/zenodo.23818383
+  - doi:10.5281/zenodo.23842133
+  - doi:10.22266/ijies2026.1031.17
+  - doi:10.5281/zenodo.23811198
+  - doi:10.5281/zenodo.23833797
+  - arxiv:1905.00304
+  - arxiv:1905.03685
+  - arxiv:2009.07352
+  - arxiv:2310.10661
+  - arxiv:2509.09564
+  - arxiv:2604.11324
+  - arxiv:2609.36039
+  - doi:10.1016/j.cose.2025.104510
+  - doi:10.1016/j.jisa.2023.103689
+  - doi:10.1109/access.2020.3000179
+  - doi:10.1109/access.2024.3472907
+  - doi:10.1109/tdsc.2022.3201582
+  - doi:10.1109/tetc.2022.3178283
+  - doi:10.1145/3675741.3675754
+  - doi:10.1016/j.compeleceng.2023.108692
+  key_points:
+  - - cic-ids2017
+    - cicids2017
+    - cic-ids-2017
+  - - unsw-nb15
+    - unsw nb15
+  - - nsl-kdd
+    - nsl kdd
+  - - n-baiot
+    - ton_iot
+    - ton-iot
+    - bot-iot
+- id: adversarial-iot
+  type: answerable
+  question: How do adversarial attacks threaten machine-learning-based IoT security systems?
+  fts: adversarial & (iot | intrusion)
+  relevant:
+  - doi:10.5281/zenodo.23800182
+  - doi:10.1016/j.cosrev.2026.100995
+  - doi:10.1016/j.jisa.2026.104584
+  - doi:10.1007/s42979-026-05363-0
+  - doi:10.11591/ijict.v15i4.pp1944-1953
+  - arxiv:1902.04416
+  - arxiv:1905.05137
+  - arxiv:1906.00076
+  - arxiv:2112.08862
+  - arxiv:2303.02214
+  - arxiv:2308.15736
+  - arxiv:2401.11723
+  - arxiv:2505.01328
+  - arxiv:2507.10836
+  - arxiv:2610.05810
+  - doi:10.1007/s12243-023-00953-y
+  - doi:10.1007/s13042-025-02873-w
+  - doi:10.1109/trustcom66490.2025.00125
+  - doi:10.3390/jcp1020014
+  - arxiv:2310.00070
+  key_points:
+  - - evasion
+    - perturb
+  - - poison
+  - - adversarial training
+    - robust
+  - - gan
+    - generative
+- id: insider-threat
+  type: answerable
+  question: How are insider threats detected?
+  fts: insider
+  relevant:
+  - doi:10.22214/ijraset.2026.85406
+  - doi:10.37468/2307-1400-2026-2-18-25
+  - arxiv:1812.00257
+  - arxiv:2005.12433
+  - arxiv:2011.02308
+  - arxiv:2212.05347
+  - arxiv:2505.15383
+  - arxiv:2510.19883
+  - arxiv:2605.07472
+  - doi:10.1109/cars67163.2025.11337953
+  - doi:10.1109/isdfs65363.2025.11012066
+  - doi:10.1145/3303771
+  - arxiv:2005.02862
+  - arxiv:2108.10567
+  - doi:10.3390/app10144945
+  key_points:
+  - - behavio
+  - - authorized
+    - privilege
+  - - deep learning
+    - multi-modal
+    - multimodal
+- id: token-theft
+  type: answerable
+  question: How can authentication tokens be stolen from on-device AI assistants?
+  fts: token & theft
+  relevant:
+  - doi:10.1007/978-3-032-42929-2_9
+  key_points:
+  - - token
+  - - apple
+- id: ebpf
+  type: answerable
+  question: How do eBPF or XDP based network functions process and match packets efficiently?
+  fts: ebpf | xdp | (packet & kernel)
+  relevant:
+  - doi:10.21203/rs.3.rs-11234466/v1
+  - doi:10.5281/zenodo.23836739
+  - doi:10.1016/j.cosrev.2026.101085
+  - arxiv:2102.09980
+  - arxiv:2508.00851
+  - arxiv:2608.14589
+  - arxiv:2609.12605
+  key_points:
+  - - ebpf
+  - - port range
+    - port-range
+  - - xdp
+    - af_xdp
+  - - zero-copy
+    - cache
+    - latency
+- id: payment-fraud
+  type: answerable
+  question: How is deep learning used to detect payment and transaction fraud?
+  fts: fraud
+  relevant:
+  - doi:10.11591/ijict.v15i4.pp1768-1776
+  - doi:10.53799/kg3xc638
+  - doi:10.3844/jcssp.2026.3322.3336
+  - arxiv:1711.01434
+  - arxiv:2012.03754
+  - arxiv:2105.08120
+  - arxiv:2503.10058
+  - arxiv:2503.22681
+  - arxiv:2504.03750
+  - arxiv:2605.18913
+  - doi:10.1109/icaace65325.2025.11020513
+  - doi:10.1145/3394486.3403361
+  key_points:
+  - - transformer
+    - tabnet
+  - - imbalance
+    - smote
+    - focal
+  - - gan
+    - augment
+  - - real-time
+    - real time
+- id: vi-federated-ids
+  type: answerable
+  question: Học liên kết (federated learning) được dùng như thế nào trong phát hiện xâm nhập?
+  fts: federated & intrusion
+  relevant:
+  - doi:10.1109/jiot.2026.3710613
+  - doi:10.59190/stc.v7i1.424
+  - doi:10.1145/3842721.3850217
+  - doi:10.1145/3842721.3850111
+  - doi:10.5281/zenodo.23805815
+  - doi:10.1016/j.comnet.2026.112806
+  - doi:10.5281/zenodo.23828609
+  - doi:10.1109/miot.2026.3714211
+  - doi:10.1016/j.ins.2026.123859
+  - doi:10.1922/comdem.v3i6s.18811
+  - doi:10.1145/3842721.3850227
+  - arxiv:2204.04254
+  - arxiv:2204.12443
+  - arxiv:2311.13800
+  - arxiv:2401.03560
+  - arxiv:2505.15376
+  - arxiv:2508.09056
+  - arxiv:2509.21389
+  - arxiv:2601.06466
+  - arxiv:2604.14663
+  - arxiv:2605.05644
+  - arxiv:2610.12704
+  - arxiv:2610.14767
+  - arxiv:2303.16956
+  - arxiv:2405.13062
+  - arxiv:2602.00219
+  - arxiv:2609.27202
+  key_points: *id001
+- id: out-cake
+  type: unanswerable
+  question: What is the best recipe for a chocolate cake?
+  relevant: []
+  key_points: []
+- id: out-football
+  type: unanswerable
+  question: Who won the 2022 FIFA World Cup final?
+  relevant: []
+  key_points: []
+- id: out-riemann
+  type: unanswerable
+  question: Outline a proof of the Riemann hypothesis.
+  relevant: []
+  key_points: []
+- id: out-ibuprofen
+  type: unanswerable
+  question: What is the maximum daily dose of ibuprofen for adults?
+  relevant: []
+  key_points: []
+- id: hard-notpetya
+  type: unanswerable
+  hard: true
+  question: How did the NotPetya malware spread inside Maersk's network in 2017?
+  relevant: []
+  key_points: []
+- id: hard-log4shell
+  type: unanswerable
+  hard: true
+  question: Which CVE identifier and CVSS score were assigned to the Log4Shell vulnerability?
+  relevant: []
+  key_points: []
+- id: hard-kerberos
+  type: unanswerable
+  hard: true
+  question: What is the default lifetime of a Kerberos ticket-granting ticket in Active Directory?
+  relevant: []
+  key_points: []
+- id: hard-stuxnet
+  type: unanswerable
+  hard: true
+  question: How did the Stuxnet worm manipulate Siemens PLCs controlling uranium centrifuges?
+  relevant: []
+  key_points: []
+- id: hard-bgp
+  type: answerable
+  question: How are BGP prefix hijacking attacks detected in real time by Internet service providers?
+  relevant:
+  - arxiv:1607.00096
+  - arxiv:1801.02918
+  - arxiv:2408.09622
+  - arxiv:2507.20434
+  - arxiv:2606.21845
+  key_points: []
+- id: hard-wpa3
+  type: answerable
+  question: Which Dragonblood attacks break the WPA3 SAE handshake?
+  relevant:
+  - doi:10.1109/eurosp57164.2023.00048
+  - doi:10.1145/3427228.3427295
+  key_points: []

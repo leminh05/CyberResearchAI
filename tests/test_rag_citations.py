@@ -128,6 +128,48 @@ def test_interpretation_only_answer_is_not_presented_as_answered() -> None:
     assert result.status == "insufficient_evidence"
 
 
+GOOD_CITATION = ("E1", "model hosts as nodes and flows as edges")
+BAD_CITATION = ("E2", "this quote does not appear in the chunk")
+
+
+def test_nothing_verified_hides_summary_and_interpretations() -> None:
+    data = answer(summary="Mitigations include secure routing.", claims=[
+        claim("Secure routing helps.", "evidence", BAD_CITATION),
+        claim("So architectures should change.", "interpretation"),
+    ])
+    result = validate_answer(data, EVIDENCE)
+    assert result.status == "insufficient_evidence" and result.claims == []
+    assert "secure routing" not in result.summary.lower()
+    assert len(result.rejected_claims) == 2
+
+
+def test_summary_is_removed_when_a_citation_was_rejected() -> None:
+    data = answer(summary="Hosts are nodes and drift is solved.", claims=[
+        claim("Hosts are nodes.", "evidence", GOOD_CITATION, BAD_CITATION),
+    ])
+    result = validate_answer(data, EVIDENCE)
+    assert result.status == "answered" and result.summary == ""
+    assert [c.statement for c in result.claims] == ["Hosts are nodes."]
+    assert any("summary removed" in w for w in result.warnings)
+
+
+def test_summary_with_raw_evidence_ids_is_removed() -> None:
+    data = answer(summary="E1 and E3 discuss hosts.", claims=[claim("Hosts are nodes.", "evidence", GOOD_CITATION)])
+    assert validate_answer(data, EVIDENCE).summary == ""
+
+
+def test_raw_evidence_ids_in_claims_become_readable() -> None:
+    data = answer(claims=[claim("As E1 and E2 say, model E9 works.", "evidence", GOOD_CITATION)])
+    statement = validate_answer(data, EVIDENCE).claims[0].statement
+    assert statement == "As [1] and a retrieved passage say, model E9 works."
+
+
+def test_summary_stays_when_every_citation_is_valid() -> None:
+    data = answer(summary="Hosts are nodes, an end-to-end E2E view.", claims=[claim("Hosts.", "evidence", GOOD_CITATION)])
+    result = validate_answer(data, EVIDENCE)
+    assert result.summary == "Hosts are nodes, an end-to-end E2E view." and result.warnings == []
+
+
 # ----------------------------------------------------------------- prompt
 
 def test_format_evidence_marks_weak_and_neutralizes_closing_tags() -> None:
@@ -149,7 +191,7 @@ def test_answer_language_is_stated_for_vietnamese() -> None:
     from cyberresearch.rag.prompts import answer_language
 
     assert answer_language("Mô hình ngôn ngữ phát hiện lỗ hổng như thế nào?") == "Vietnamese"
-    assert answer_language("How do GNNs work?") == "the same language as the question"
+    assert answer_language("How do GNNs work?") == "English"
     msg = build_user_message("Lỗ hổng phần mềm là gì?", EVIDENCE, [], 0.45)
     assert "in Vietnamese" in msg
 

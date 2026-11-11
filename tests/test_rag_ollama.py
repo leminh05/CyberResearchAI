@@ -1,6 +1,7 @@
 """Ollama answer generator (no real server: fake HTTP session)."""
 
 import json
+from types import SimpleNamespace
 
 import pytest
 import requests
@@ -35,6 +36,23 @@ class FakeSession:
 def ok(content, prompt_tokens=3000, done_reason="stop"):
     return FakeResponse(200, {"model": "qwen2.5:7b", "message": {"content": content},
                               "prompt_eval_count": prompt_tokens, "eval_count": 400, "done_reason": done_reason})
+
+
+def test_is_ready_needs_the_server_and_the_model() -> None:
+    class Session:
+        def __init__(self, models=None, error=None):
+            self.models, self.error = models, error
+
+        def get(self, url, timeout):
+            if self.error:
+                raise self.error
+            assert url.endswith("/api/tags")
+            return SimpleNamespace(raise_for_status=lambda: None, json=lambda: {"models": self.models})
+
+    settings = RagSettings(ollama_model="m:1")
+    assert OllamaGenerator(settings, Session([{"name": "m:1"}])).is_ready()
+    assert not OllamaGenerator(settings, Session([{"name": "other"}])).is_ready()
+    assert not OllamaGenerator(settings, Session(error=requests.ConnectionError())).is_ready()
 
 
 def test_request_shape_and_parsing() -> None:
