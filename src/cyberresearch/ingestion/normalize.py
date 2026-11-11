@@ -15,6 +15,11 @@ _DOI_PREFIX = re.compile(r"^(?:https?://(?:dx\.)?doi\.org/|doi:\s*)", re.IGNOREC
 # New-style arXiv IDs (2007+): 0704.0001, 2401.01234 ; optional version suffix v2.
 _ARXIV_NEW = re.compile(r"(\d{4}\.\d{4,5})(?:v\d+)?", re.IGNORECASE)
 # Old-style arXiv IDs: cs/0112017, math.GT/0309136
+# Not papers: exam-dump PDFs ("... Certified Administrator R80 PDF", unlike a
+# real "Policy Algebras.pdf") and the front/back matter of proceedings.
+_JUNK_TITLE = re.compile(
+    r"(?:[\s,]pdf$|exam dumps?|^(?:front matter|back matter|table of contents|title page|editorial board|index)$)"
+)
 _ARXIV_OLD = re.compile(r"([a-z\-]+(?:\.[a-z]{2})?/\d{7})(?:v\d+)?", re.IGNORECASE)
 
 
@@ -55,6 +60,23 @@ def normalize_arxiv_id(value: str | None) -> str | None:
     if match := _ARXIV_OLD.fullmatch(text):
         return match.group(1).lower()
     return None
+
+
+def is_mostly_english(text: str) -> bool:
+    """True if at least 95% of the letters are plain ASCII.
+
+    Vietnamese, for example, uses many accented letters (ư, ộ, ể ...), so a
+    Vietnamese question falls below the threshold.
+    """
+    letters = [ch for ch in text if ch.isalpha()]
+    if not letters:
+        return True
+    return sum(ch.isascii() for ch in letters) / len(letters) >= 0.95
+
+
+def is_junk_title(title: str | None) -> bool:
+    """True for a title that names a non-paper (see ``_JUNK_TITLE``)."""
+    return bool(title and _JUNK_TITLE.search(title.strip().lower()))
 
 
 def normalize_title(value: str | None) -> str | None:
