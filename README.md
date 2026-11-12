@@ -671,6 +671,28 @@ It does not run `live`, `model` or `test:e2e`.
 
 ## Project layout
 
+### Module map
+
+```text
+ingestion + bigdata -> PostgreSQL + pgvector (processing embeds) -> rag -> web -> frontend
+                                                       evaluation measures every step
+```
+
+| Module | Role | Main files |
+|---|---|---|
+| core | Settings, database connection, logging | `config.py` (settings.yaml + .env), `db.py`, `logging_setup.py` (API keys redacted) |
+| `ingestion/` | Metadata from arXiv, OpenAlex and Semantic Scholar | `clients/`, `http.py` (rate limits, retries), `normalize.py` (IDs, titles, quality filter), `dedup.py`, `pipeline.py` (daily, backfill, checkpoints), `storage.py` |
+| `processing/` | Papers to embedded chunks | `access.py` (legal PDFs only), `downloader.py`, `extract.py`, `sections.py`, `chunking.py`, `embeddings.py` (MiniLM, 384-d), `store.py` |
+| `bigdata/` | Big Data path | `arxiv_lake.py` (Bronze / Silver / Gold on HDFS), `spark_jobs.py`, `python_baseline.py`, `benchmark.py`, `streaming.py` (Kafka + Spark Structured Streaming) |
+| `rag/` | Cited answers | `retrieval.py` (hybrid search, reranker), `prompts.py` (system prompt, JSON schema), `llm.py` / `gemini_client.py` / `ollama_client.py`, `citations.py` (verbatim quote check), `engine.py`, `chat.py` |
+| `evaluation/` | Measurement | `dataset.py` (golden set), `metrics.py` (precision/recall@k, MRR), `retrieval_eval.py`, `answer_eval.py`, `data_quality.py`, `performance.py` |
+| `web/` | Backend API | `app.py` (`/api/health`, `/api/chat`, conversations), `schemas.py`, `limits.py` |
+| `frontend/` | React chat | `App.jsx` (chat, model selector), `Answer.jsx` (claims and citations), `api.js` |
+
+Every package has a `cli.py` that adds its subcommands to `python main.py`.
+
+### Files
+
 ```
 config/settings.yaml          Non-secret settings: sources, rate limits, topics
 src/cyberresearch/
