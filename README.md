@@ -22,7 +22,7 @@
 
 | | |
 |---|---|
-| **Corpus** | 54,301 cybersecurity papers and 74,005 embedded chunks in the large corpus; 377 papers with PDF text in the evaluated one |
+| **Corpus** | 99,607 cybersecurity papers and 126,462 embedded chunks in the large corpus (54,301 from the arXiv snapshot, the rest streamed through Kafka); 377 papers with PDF text in the evaluated one |
 | **Sources** | arXiv, OpenAlex and Semantic Scholar APIs, plus the Kaggle arXiv snapshot through an HDFS lake |
 | **Big Data path** | PySpark Bronze / Silver / Gold on HDFS, and Kafka with Spark Structured Streaming into the chatbot's database |
 | **Search** | Hybrid vector + full-text search, a cross-encoder reranker, at most 3 chunks per paper |
@@ -196,6 +196,7 @@ Semantic Scholar ─┘   timeout, retry,   DOI, arXiv ID,   common      ID / ti
 | Rate limits | Minimum interval per source (`config/settings.yaml`): arXiv 3 s, OpenAlex 0.2 s, Semantic Scholar 1.1 s with key / 3 s without |
 | Deduplication | `ingestion/dedup.py`, priority: arXiv ID → DOI → Semantic Scholar ID → OpenAlex ID → normalized title + year (rejected if DOIs/arXiv IDs conflict). Missing fields are filled from later sources, never overwritten |
 | Missing metadata | Every field except `source`/`source_id` is optional; items with neither a title nor an identifier are skipped and counted |
+| Quality filter | `PaperRecord.is_valid()`: the title must be English (at least 95% ASCII letters; the embedding model is English-only) and must not name a non-paper (exam-dump "... PDF", "Front Matter", "Index"). OpenAlex is asked for `language:en` and the types article, preprint, review, book-chapter, conference-paper and dissertation |
 | No needless reprocessing | `paper_sources.content_hash`: an identical record is only marked as seen (`unchanged`) |
 | Checkpoint & resume | `ingestion_checkpoints` stores the API cursor after every page, in the same transaction as that page's records |
 | Daily vs backfill | `daily`: window = last completed end − 1 overlap day → today. `backfill`: range split into 12-month windows (newest first); completed windows are skipped |
@@ -460,8 +461,10 @@ report is saved to `data/eval/lake_report.json`; the measured run is in
 
 ### Large corpus for the chatbot
 
-About 54,000 cybersecurity papers in their own database, `cyberresearch_large`, which
-starts as a copy of the main one. The application uses it only when `APP_DB` is set:
+Cybersecurity papers in their own database, `cyberresearch_large`, which starts as a copy
+of the main one. It was built from 54,301 papers of the arXiv snapshot and has grown to
+99,607 through [streaming](#streaming-ingestion). The evaluation numbers were measured on the
+54,301 papers. The application uses it only when `APP_DB` is set:
 
 ```powershell
 $env:APP_DB = "cyberresearch_large"
@@ -493,7 +496,7 @@ crawler (stream-produce) -> Kafka topic papers.raw -> Spark Structured Streaming
 ```powershell
 docker compose --profile streaming up -d --build     # Kafka, HDFS, crawler (hourly) and streaming job
 docker compose --profile streaming logs -f stream-consumer   # one JSON line per micro-batch
-docker compose --profile streaming stop              # data stays in the volumes
+docker compose stop stream-producer stream-consumer kafka namenode datanode1 datanode2   # PostgreSQL and the website keep running
 ```
 
 For a short demonstration, run each side once:
@@ -520,6 +523,30 @@ as soon as a batch ends, with no restart. `STREAM_DB` in `.env` sends them elsew
 `WEB_DB` empty that is the main database, so streaming on a machine that holds the Phase 4
 corpus changes what `main.py evaluate` measures: set `STREAM_DB` to another name there. Only
 abstracts are embedded here; PDFs stay a job for `process`.
+
+### What streaming collected (2026-11-08 to 2026-11-11)
+
+The hourly crawler and two backfills (`--start 2024-01-01`, then a 3-hour loop with
+`--start 2020-01-01`) grew `cyberresearch_large` from 54,332 to 105,502 papers. A quality check
+then found non-English papers and certification-dump PDFs, which led to the quality filter
+(see [Data ingestion](#data-ingestion-phase-1)). The same rules removed 5,907 papers, after a
+backup to the schema `junk_backup_20261111`; 12 that the golden set labels relevant were
+restored.
+
+| Batch | Papers | On-topic* | No abstract | Searchable |
+|---|---:|---:|---:|---:|
+| Before streaming (arXiv snapshot) | 54,292 | 93.0% | 0.1% | 99.9% |
+| Streamed 2026-11-08 to 10 | 10,667 | 95.0% | 11.9% | 86.3% |
+| Streamed 2026-11-11 (3 hours) | 34,648 | 93.5% | 13.3% | 86.2% |
+
+\*Title or abstract contains a security keyword (security, attack, malware, privacy, ...):
+a rough proxy, not a judged label.
+
+Papers without an abstract come from OpenAlex and Semantic Scholar, which cannot redistribute
+some publishers' abstracts. They get no chunk, so search never returns them. The backfill
+reads the newest windows first, so the per-run budget ran out on 2025-2026: the streamed papers
+are recent, and 2020-2022 is barely covered. The consumer embeds on CPU and fell about
+three hours behind the 3-hour backfill; unread messages stay in Kafka for the next start.
 
 Delivery is at least once: a batch is replayed after a crash, and the deduplicating
 upsert makes the replay harmless. Kafka has one broker, no authentication and no
