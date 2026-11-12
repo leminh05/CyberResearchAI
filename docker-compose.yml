@@ -97,7 +97,7 @@ services:
       test: ["CMD", "python", "-c", "import urllib.request as u; u.urlopen('http://127.0.0.1:8000/api/health', timeout=5)"]
       interval: 30s
       timeout: 10s
-      start_period: 120s
+      start_period: 600s  # first start downloads the reranker (about 90 MB), measured at 5.5 min
     restart: unless-stopped
 
   kafka:
